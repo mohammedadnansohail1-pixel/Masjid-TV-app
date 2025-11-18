@@ -1,0 +1,22 @@
+version: '3.8'
+
+services:
+  tv-player-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: masjid-tv-player-dev
+    environment:
+      VITE_API_URL: "http://localhost:3000/api"
+      VITE_WS_URL: "http://localhost:3000"
+      VITE_HEARTBEAT_INTERVAL: "30000"
+      VITE_CONTENT_ROTATION_INTERVAL: "10000"
+      VITE_DEBUG: "true"
+    ports:
+      - "5173:5173"
+    volumes:
+      - .:/app
+      - /app/node_modules
+    command: npm run dev
+    stdin_open: true
+    tty: true
