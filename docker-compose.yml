@@ -1,0 +1,95 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:14-alpine
+    container_name: masjid-postgres
+    environment:
+      POSTGRES_USER: masjid
+      POSTGRES_PASSWORD: masjid123
+      POSTGRES_DB: masjid_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U masjid"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: masjid-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: masjid-backend
+    environment:
+      DATABASE_URL: "postgresql://masjid:masjid123@postgres:5432/masjid_db"
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      JWT_SECRET: "development-secret-key-change-in-production"
+      PORT: 3000
+      NODE_ENV: development
+    ports:
+      - "3000:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    command: npm run start:dev
+
+  admin-dashboard:
+    build:
+      context: ./admin-dashboard
+      dockerfile: Dockerfile
+    container_name: masjid-admin
+    environment:
+      NEXT_PUBLIC_API_URL: "http://localhost:3000"
+      NEXT_PUBLIC_WS_URL: "ws://localhost:3000"
+    ports:
+      - "3001:3000"
+    depends_on:
+      - backend
+    volumes:
+      - ./admin-dashboard:/app
+      - /app/node_modules
+      - /app/.next
+    command: npm run dev
+
+  tv-player:
+    build:
+      context: ./tv-player
+      dockerfile: Dockerfile
+    container_name: masjid-tv-player
+    environment:
+      VITE_API_URL: "http://localhost:3000"
+      VITE_WS_URL: "ws://localhost:3000"
+    ports:
+      - "3002:5173"
+    depends_on:
+      - backend
+    volumes:
+      - ./tv-player:/app
+      - /app/node_modules
+    command: npm run dev
+
+volumes:
+  postgres_data:
+  redis_data:

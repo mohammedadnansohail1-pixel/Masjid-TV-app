@@ -1,0 +1,386 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ===========================
+// User Management
+// ===========================
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  firstName    String?
+  lastName     String?
+  role         UserRole @default(MASJID_ADMIN)
+  isActive     Boolean  @default(true)
+
+  // Relations
+  masjidId String?
+  masjid   Masjid? @relation(fields: [masjidId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([email])
+  @@index([masjidId])
+}
+
+enum UserRole {
+  SUPER_ADMIN
+  MASJID_ADMIN
+  CONTENT_EDITOR
+}
+
+// ===========================
+// Masjid (Mosque)
+// ===========================
+
+model Masjid {
+  id      String  @id @default(cuid())
+  name    String
+  slug    String  @unique
+  address String?
+  city    String?
+  state   String?
+  zipCode String?
+  country String  @default("USA")
+
+  // Location
+  latitude  Float?
+  longitude Float?
+  timezone  String @default("America/New_York")
+
+  // Contact
+  email   String?
+  phone   String?
+  website String?
+
+  // Media
+  logo String?
+
+  // Prayer calculation settings
+  calculationMethod PrayerCalculationMethod @default(ISNA)
+  asrCalculation    AsrCalculation          @default(STANDARD)
+  highLatitudeRule  HighLatitudeRule        @default(MIDDLE_OF_NIGHT)
+
+  // Display settings
+  defaultTemplate String @default("template1")
+
+  // Relations
+  users         User[]
+  prayerTimes   PrayerTime[]
+  devices       Device[]
+  announcements Announcement[]
+  media         Media[]
+  campaigns     Campaign[]
+  donations     Donation[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([slug])
+}
+
+enum PrayerCalculationMethod {
+  MWL       // Muslim World League
+  ISNA      // Islamic Society of North America
+  EGYPT     // Egyptian General Authority of Survey
+  MAKKAH    // Umm Al-Qura University, Makkah
+  KARACHI   // University of Islamic Sciences, Karachi
+  TEHRAN    // Institute of Geophysics, University of Tehran
+  JAFARI    // Shia Ithna-Ashari
+  GULF      // Gulf Region
+  KUWAIT    // Kuwait
+  QATAR     // Qatar
+  SINGAPORE // Singapore
+  FRANCE    // Union of Islamic Organizations of France
+  TURKEY    // Turkey
+  RUSSIA    // Spiritual Administration of Muslims of Russia
+}
+
+enum AsrCalculation {
+  STANDARD // Shafi, Maliki, Jafari, Hanbali
+  HANAFI   // Hanafi
+}
+
+enum HighLatitudeRule {
+  MIDDLE_OF_NIGHT
+  SEVENTH_OF_NIGHT
+  TWILIGHT_ANGLE
+}
+
+// ===========================
+// Prayer Times
+// ===========================
+
+model PrayerTime {
+  id       String @id @default(cuid())
+  masjidId String
+  masjid   Masjid @relation(fields: [masjidId], references: [id], onDelete: Cascade)
+
+  date DateTime @db.Date
+
+  // Salah times (calculated from API or manual) - stored as HH:mm
+  fajr    String
+  sunrise String
+  dhuhr   String
+  asr     String
+  maghrib String
+  isha    String
+
+  // Iqamah times (manually set)
+  fajrIqamah    String?
+  dhuhrIqamah   String?
+  asrIqamah     String?
+  maghribIqamah String?
+  ishaIqamah    String?
+
+  // Special times
+  jumuah1 String? // First Jummah
+  jumuah2 String? // Second Jummah (if applicable)
+
+  isManual Boolean @default(false) // True if manually entered
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([masjidId, date])
+  @@index([masjidId, date])
+}
+
+// ===========================
+// Devices (TV Players, Kiosks)
+// ===========================
+
+model Device {
+  id          String     @id @default(cuid())
+  masjidId    String
+  masjid      Masjid     @relation(fields: [masjidId], references: [id], onDelete: Cascade)
+  name        String
+  type        DeviceType @default(TV)
+  pairingCode String     @unique
+  isPaired    Boolean    @default(false)
+
+  // Device info
+  userAgent String?
+  ipAddress String?
+  lastSeen  DateTime?
+
+  // Display settings
+  activeTemplate          String @default("template1")
+  contentRotationInterval Int    @default(30) // seconds
+
+  isActive Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([masjidId])
+  @@index([pairingCode])
+}
+
+enum DeviceType {
+  TV    // Masjid TV display
+  HOME_FRAME // Home Athan frame
+  KIOSK // Donation kiosk
+}
+
+// ===========================
+// Announcements
+// ===========================
+
+model Announcement {
+  id       String @id @default(cuid())
+  masjidId String
+  masjid   Masjid @relation(fields: [masjidId], references: [id], onDelete: Cascade)
+
+  title    String
+  body     String  @db.Text
+  imageUrl String?
+
+  // Scheduling
+  startDate DateTime?
+  endDate   DateTime?
+  isActive  Boolean   @default(true)
+
+  // Display priority
+  priority Int @default(0) // Higher = shown first
+
+  createdBy String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([masjidId])
+  @@index([isActive, startDate, endDate])
+}
+
+// ===========================
+// Media Library
+// ===========================
+
+model Media {
+  id           String    @id @default(cuid())
+  masjidId     String
+  masjid       Masjid    @relation(fields: [masjidId], references: [id], onDelete: Cascade)
+  filename     String
+  originalName String
+  mimeType     String
+  size         Int // bytes
+  path         String // S3 key or local path
+  url          String // Public URL
+  type         MediaType
+
+  createdBy String?
+  createdAt DateTime @default(now())
+
+  @@index([masjidId])
+  @@index([type])
+}
+
+enum MediaType {
+  IMAGE
+  VIDEO
+  PDF
+}
+
+// ===========================
+// Content Scheduling
+// ===========================
+
+model ContentSchedule {
+  id       String @id @default(cuid())
+  masjidId String
+
+  name        String
+  contentType ContentType
+  contentId   String? // Reference to announcement, media, or external URL
+
+  // URL content
+  url String?
+
+  // Scheduling
+  startTime DateTime?
+  endTime   DateTime?
+  days      Int[] // [0,1,2,3,4,5,6] = Sun-Sat
+
+  duration Int @default(30) // Display duration in seconds
+  priority Int @default(0)
+
+  isActive Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([masjidId, isActive])
+}
+
+enum ContentType {
+  PRAYER_TIMES
+  ANNOUNCEMENT
+  IMAGE
+  VIDEO
+  WEBVIEW
+}
+
+// ===========================
+// Donation Campaigns
+// ===========================
+
+model Campaign {
+  id          String         @id @default(cuid())
+  masjidId    String
+  masjid      Masjid         @relation(fields: [masjidId], references: [id], onDelete: Cascade)
+  name        String
+  slug        String
+  description String?        @db.Text
+  goalAmount  Decimal        @db.Decimal(10, 2)
+  currency    String         @default("USD")
+  status      CampaignStatus @default(ACTIVE)
+
+  startDate DateTime?
+  endDate   DateTime?
+
+  // Relations
+  donations Donation[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([masjidId, slug])
+  @@index([masjidId, status])
+}
+
+enum CampaignStatus {
+  DRAFT
+  ACTIVE
+  PAUSED
+  COMPLETED
+}
+
+// ===========================
+// Donations
+// ===========================
+
+model Donation {
+  id         String  @id @default(cuid())
+  masjidId   String
+  masjid     Masjid  @relation(fields: [masjidId], references: [id], onDelete: Cascade)
+  campaignId String?
+  campaign   Campaign? @relation(fields: [campaignId], references: [id])
+
+  amount   Decimal @db.Decimal(10, 2)
+  currency String  @default("USD")
+
+  // Donor info (optional for anonymous)
+  donorName   String?
+  donorEmail  String?
+  donorPhone  String?
+  isAnonymous Boolean @default(false)
+
+  // Payment details
+  paymentMethod   PaymentMethod
+  paymentProvider String         @default("stripe")
+  transactionId   String? // Stripe payment intent ID
+
+  // Recurring
+  isRecurring       Boolean @default(false)
+  recurringInterval String? // "weekly", "monthly", "yearly"
+
+  status DonationStatus @default(PENDING)
+
+  // Metadata
+  metadata Json? // Store additional Stripe metadata
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([masjidId])
+  @@index([campaignId])
+  @@index([status])
+  @@index([transactionId])
+}
+
+enum PaymentMethod {
+  CARD
+  APPLE_PAY
+  GOOGLE_PAY
+  ACH
+  CASH
+  CHECK
+}
+
+enum DonationStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+}
