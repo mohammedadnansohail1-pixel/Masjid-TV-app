@@ -24,11 +24,11 @@ interface DeviceConnection {
     credentials: true,
   },
 })
-export class WebSocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
+export class DeviceGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
   server: Server;
 
-  private readonly logger = new Logger(WebSocketGateway.name);
+  private readonly logger = new Logger(DeviceGateway.name);
   private connectedDevices: Map<string, DeviceConnection> = new Map();
 
   handleConnection(client: Socket) {

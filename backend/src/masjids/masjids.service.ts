@@ -177,9 +177,9 @@ export class MasjidsService {
   async updateCalculationSettings(
     id: string,
     settings: {
-      calculationMethod?: string;
-      asrCalculation?: string;
-      highLatitudeRule?: string;
+      calculationMethod?: any;
+      asrCalculation?: any;
+      highLatitudeRule?: any;
     },
     user: any,
   ) {
@@ -198,7 +198,7 @@ export class MasjidsService {
 
     const updated = await this.prisma.masjid.update({
       where: { id },
-      data: settings,
+      data: settings as any,
     });
 
     return {

@@ -116,7 +116,7 @@ export default function PrayerTimesPage() {
                 {prayerTimes?.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={7} className="text-center text-muted-foreground">
-                      No prayer times found. Click "Calculate Times" to generate them.
+                      No prayer times found. Click &ldquo;Calculate Times&rdquo; to generate them.
                     </TableCell>
                   </TableRow>
                 ) : (

@@ -57,7 +57,7 @@ export interface ContentSchedule {
 }
 
 export interface WebSocketMessage {
-  type: 'prayer_times_updated' | 'announcement_updated' | 'content_updated' | 'template_changed' | 'refresh';
+  type: 'prayer_times_updated' | 'announcement_updated' | 'content_updated' | 'template_changed' | 'refresh' | 'connected' | 'disconnected' | 'connection_failed' | 'device_paired';
   data?: any;
 }
 
