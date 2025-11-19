@@ -79,13 +79,13 @@
       });
 
       // Prevent accidental navigation
-      window.addEventListener('beforeunload', (e) => {
-        // Only prevent if not in development mode
-        if (import.meta.env.MODE === 'production') {
-          e.preventDefault();
-          e.returnValue = '';
-        }
-      });
+      // window.addEventListener('beforeunload', (e) => {
+      //   // Only prevent if not in development mode
+      //   if (import.meta.env.MODE === 'production') {
+      //     e.preventDefault();
+      //     e.returnValue = '';
+      //   }
+      // });
     </script>
   </body>
 </html>

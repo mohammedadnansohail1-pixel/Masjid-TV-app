@@ -7,8 +7,10 @@ export function useMasjids() {
   return useQuery({
     queryKey: ["masjids"],
     queryFn: async () => {
-      const response = await apiClient.get<Masjid[]>("/masjids");
-      return response.data;
+      // const response = await apiClient.get<Masjid[]>("/masjids");
+      // return response.data;
+      const response = await apiClient.get("/masjids");
+      return response.data.data
     },
   });
 }
@@ -17,8 +19,10 @@ export function useMasjid(id: number) {
   return useQuery({
     queryKey: ["masjids", id],
     queryFn: async () => {
-      const response = await apiClient.get<Masjid>(`/masjids/${id}`);
-      return response.data;
+      // const response = await apiClient.get<Masjid>(`/masjids/${id}`);
+      // return response.data;
+      const response = await apiClient.get(`/masjids/${id}`);
+      return response.data.data;
     },
     enabled: !!id,
   });

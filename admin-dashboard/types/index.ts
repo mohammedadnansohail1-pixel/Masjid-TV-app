@@ -32,7 +32,7 @@ export interface PrayerTime {
 
 export interface Device {
   id: number;
-  masjidId: number;
+  masjidId: string;
   name: string;
   pairingCode: string;
   isPaired: boolean;

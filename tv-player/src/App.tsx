@@ -33,7 +33,14 @@ function App() {
   const [currentContent, setCurrentContent] = useState<ContentItem | null>(null);
 
   // Custom hooks
-  const { device, isPaired, isLoading: deviceLoading, checkPairingStatus } = useDeviceRegistration();
+  // const { device, isPaired, isLoading: deviceLoading, checkPairingStatus } = useDeviceRegistration();
+  const {
+    device,
+    isPaired,
+    isLoading: deviceLoading,
+    pairDevice,
+    checkPairingStatus,
+  } = useDeviceRegistration();
   const { prayerTimes, refresh: refreshPrayerTimes } = usePrayerTimes(masjidId);
   const { schedule, announcements, media, refresh: refreshContent } = useContentSchedule(masjidId);
   const { isConnected } = useWebSocket(device?.id || null, masjidId, handleWebSocketMessage);
@@ -152,12 +159,20 @@ function App() {
   }
 
   // Device setup screen
-  if (!isPaired && device) {
+  // if (!isPaired && device) {
+  //   return (
+  //     <DeviceSetup
+  //       device={device}
+  //       onPaired={handlePaired}
+  //       checkPairingStatus={checkPairingStatus}
+  //     />
+  //   );
+  // }
+  if (!isPaired) {
     return (
       <DeviceSetup
-        device={device}
         onPaired={handlePaired}
-        checkPairingStatus={checkPairingStatus}
+        pairDevice={pairDevice}
       />
     );
   }

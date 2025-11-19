@@ -64,16 +64,23 @@ class APIService {
 
   // Device Registration
   async registerDevice(): Promise<DeviceRegistrationResponse> {
-    const response = await this.api.post<DeviceRegistrationResponse>('/tv-devices/register');
+    const response = await this.api.post<DeviceRegistrationResponse>('/devices/register');
     if (response.data.token) {
       this.setAuthToken(response.data.token);
     }
     return response.data;
   }
 
+  async pairDevice(pairingCode: string) {
+    const response = await this.api.post('/devices/pair', {
+      pairingCode
+    });
+    return response.data;
+  }
+
   // Check pairing status
   async checkPairingStatus(deviceId: string): Promise<PairingStatusResponse> {
-    const response = await this.api.get<PairingStatusResponse>(`/tv-devices/${deviceId}/pairing-status`);
+    const response = await this.api.get<PairingStatusResponse>(`/devices/${deviceId}/pairing-status`);
     return response.data;
   }
 
@@ -104,7 +111,7 @@ class APIService {
   // Send heartbeat
   async sendHeartbeat(deviceId: string) {
     try {
-      await this.api.post(`/tv-devices/${deviceId}/heartbeat`);
+      await this.api.post(`/devices/${deviceId}/heartbeat`);
     } catch (error) {
       if (import.meta.env.VITE_DEBUG === 'true') {
         console.error('Heartbeat failed:', error);
@@ -114,7 +121,7 @@ class APIService {
 
   // Get device info
   async getDeviceInfo(deviceId: string) {
-    const response = await this.api.get(`/tv-devices/${deviceId}`);
+    const response = await this.api.get(`/devices/${deviceId}`);
     return response.data;
   }
 }
