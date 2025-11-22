@@ -1,4 +1,4 @@
-import { IsString, IsInt, Min, Max, IsOptional } from 'class-validator';
+import { IsString, IsInt, Min, Max, IsOptional, IsDateString } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 
@@ -7,19 +7,13 @@ export class CalculatePrayerTimesDto {
   @IsString()
   masjidId: string;
 
-  @ApiProperty({ example: 2024 })
-  @IsInt()
-  @Min(2020)
-  @Max(2100)
-  @Type(() => Number)
-  year: number;
+  @ApiProperty({ example: '2024-01-01', description: 'Start date (YYYY-MM-DD)' })
+  @IsDateString()
+  startDate: string;
 
-  @ApiProperty({ example: 1, description: 'Month (1-12)' })
-  @IsInt()
-  @Min(1)
-  @Max(12)
-  @Type(() => Number)
-  month: number;
+  @ApiProperty({ example: '2024-12-31', description: 'End date (YYYY-MM-DD), max 1 year + 1 day from start' })
+  @IsDateString()
+  endDate: string;
 
   @ApiPropertyOptional({
     example: false,

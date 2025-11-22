@@ -114,19 +114,15 @@ export function useCalculatePrayerTimes() {
   const { toast } = useToast();
 
   return useMutation({
-    // mutationFn: async (data: { masjidId: number; startDate: string; endDate: string }) => {
-    //   const response = await apiClient.post("/prayer-times/calculate", data);
-    //   return response.data;
-    // },
-    mutationFn: async (data: { masjidId: string; year: number; month: number; overwrite?: boolean }) => {
+    mutationFn: async (data: { masjidId: string; startDate: string; endDate: string; overwrite?: boolean }) => {
       const response = await apiClient.post("/prayer-times/calculate", data);
       return response.data;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["prayer-times"] });
       toast({
         title: "Success",
-        description: "Prayer times calculated successfully",
+        description: `Prayer times calculated: ${data.data?.created || 0} created, ${data.data?.updated || 0} updated`,
       });
     },
     onError: (error: any) => {
