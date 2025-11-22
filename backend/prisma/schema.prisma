@@ -163,8 +163,8 @@ model PrayerTime {
 
 model Device {
   id          String     @id @default(cuid())
-  masjidId    String
-  masjid      Masjid     @relation(fields: [masjidId], references: [id], onDelete: Cascade)
+  masjidId    String?
+  masjid      Masjid?    @relation(fields: [masjidId], references: [id], onDelete: Cascade)
   name        String
   type        DeviceType @default(TV)
   pairingCode String     @unique
