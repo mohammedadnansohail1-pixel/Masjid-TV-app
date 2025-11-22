@@ -125,11 +125,20 @@ export class DevicesController {
 
   @Public()
   @Post('heartbeat/:pairingCode')
-  @ApiOperation({ summary: 'Record device heartbeat (public for device apps)' })
+  @ApiOperation({ summary: 'Record device heartbeat by pairing code (public for device apps)' })
   @ApiResponse({ status: 200, description: 'Heartbeat recorded' })
   @ApiResponse({ status: 404, description: 'Device not found' })
   async heartbeat(@Param('pairingCode') pairingCode: string) {
     return this.devicesService.heartbeat(pairingCode);
+  }
+
+  @Public()
+  @Post(':id/heartbeat')
+  @ApiOperation({ summary: 'Record device heartbeat by device ID (public for device apps)' })
+  @ApiResponse({ status: 200, description: 'Heartbeat recorded' })
+  @ApiResponse({ status: 404, description: 'Device not found' })
+  async heartbeatById(@Param('id') id: string) {
+    return this.devicesService.heartbeatById(id);
   }
 
   @Public()

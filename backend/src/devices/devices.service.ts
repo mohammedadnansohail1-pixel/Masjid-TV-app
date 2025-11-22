@@ -272,7 +272,7 @@ export class DevicesService {
   }
 
   /**
-   * Record device heartbeat (public endpoint for device apps)
+   * Record device heartbeat by pairing code (public endpoint for device apps)
    */
   async heartbeat(pairingCode: string) {
     const device = await this.prisma.device.findUnique({
@@ -289,6 +289,31 @@ export class DevicesService {
 
     await this.prisma.device.update({
       where: { id: device.id },
+      data: {
+        lastSeen: new Date(),
+      },
+    });
+
+    return {
+      success: true,
+      message: 'Heartbeat recorded',
+    };
+  }
+
+  /**
+   * Record device heartbeat by device ID (public endpoint for device apps)
+   */
+  async heartbeatById(id: string) {
+    const device = await this.prisma.device.findUnique({
+      where: { id },
+    });
+
+    if (!device) {
+      throw new NotFoundException('Device not found');
+    }
+
+    await this.prisma.device.update({
+      where: { id },
       data: {
         lastSeen: new Date(),
       },
