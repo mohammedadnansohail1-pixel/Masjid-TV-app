@@ -1,28 +1,21 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useRouter, useParams } from "next/navigation";
+import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { useMasjids } from "@/hooks/useMasjids";
-import { useCreateAnnouncement } from "@/hooks/useAnnouncements";
+import { useAnnouncement, useUpdateAnnouncement } from "@/hooks/useAnnouncements";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
+import { LoadingSpinner } from "@/components/LoadingSpinner";
 
 const announcementSchema = z.object({
-  masjidId: z.string().min(1, "Masjid is required"),
   title: z.string().min(1, "Title is required"),
   body: z.string().min(1, "Body is required"),
   priority: z.number().min(0).default(0),
@@ -34,40 +27,77 @@ const announcementSchema = z.object({
 
 type AnnouncementFormData = z.infer<typeof announcementSchema>;
 
-export default function NewAnnouncementPage() {
+export default function EditAnnouncementPage() {
   const router = useRouter();
-  const { data: masjids } = useMasjids();
-  const createAnnouncement = useCreateAnnouncement();
+  const params = useParams();
+  const id = params.id as string;
+
+  const { data: announcement, isLoading } = useAnnouncement(id);
+  const updateAnnouncement = useUpdateAnnouncement();
 
   const {
     register,
     handleSubmit,
     setValue,
     watch,
+    reset,
     formState: { errors },
   } = useForm<AnnouncementFormData>({
     resolver: zodResolver(announcementSchema),
     defaultValues: {
-      masjidId: "",
       priority: 0,
       isActive: true,
-      startDate: new Date().toISOString().split('T')[0],
     },
   });
 
+  useEffect(() => {
+    if (announcement) {
+      reset({
+        title: announcement.title,
+        body: announcement.body,
+        priority: announcement.priority || 0,
+        startDate: announcement.startDate ? announcement.startDate.split('T')[0] : "",
+        endDate: announcement.endDate ? announcement.endDate.split('T')[0] : "",
+        isActive: announcement.isActive,
+        imageUrl: announcement.imageUrl || "",
+      });
+    }
+  }, [announcement, reset]);
+
   const onSubmit = async (data: AnnouncementFormData) => {
-    await createAnnouncement.mutateAsync({
-      masjidId: data.masjidId,
-      title: data.title,
-      body: data.body,
-      priority: data.priority,
-      startDate: data.startDate ? new Date(data.startDate).toISOString() : undefined,
-      endDate: data.endDate ? new Date(data.endDate).toISOString() : undefined,
-      isActive: data.isActive,
-      imageUrl: data.imageUrl || undefined,
+    await updateAnnouncement.mutateAsync({
+      id,
+      data: {
+        title: data.title,
+        body: data.body,
+        priority: data.priority,
+        startDate: data.startDate ? new Date(data.startDate).toISOString() : undefined,
+        endDate: data.endDate ? new Date(data.endDate).toISOString() : undefined,
+        isActive: data.isActive,
+        imageUrl: data.imageUrl || undefined,
+      },
     });
     router.push("/dashboard/announcements");
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center h-96">
+        <LoadingSpinner size="lg" />
+      </div>
+    );
+  }
+
+  if (!announcement) {
+    return (
+      <div className="text-center py-12">
+        <h2 className="text-xl font-semibold">Announcement not found</h2>
+        <Link href="/dashboard/announcements">
+          <Button className="mt-4">Back to Announcements</Button>
+        </Link>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -78,8 +108,8 @@ export default function NewAnnouncementPage() {
           </Button>
         </Link>
         <div>
-          <h1 className="text-3xl font-bold">Create Announcement</h1>
-          <p className="text-muted-foreground">Create a new announcement for TV displays</p>
+          <h1 className="text-3xl font-bold">Edit Announcement</h1>
+          <p className="text-muted-foreground">Update announcement details</p>
         </div>
       </div>
 
@@ -90,29 +120,6 @@ export default function NewAnnouncementPage() {
         <CardContent>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
             <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="masjidId">Masjid *</Label>
-                <Select
-                  value={watch("masjidId")}
-                  onValueChange={(value) => setValue("masjidId", value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a masjid" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Array.isArray(masjids) &&
-                      masjids.map((masjid) => (
-                        <SelectItem key={masjid.id} value={masjid.id}>
-                          {masjid.name}
-                        </SelectItem>
-                      ))}
-                  </SelectContent>
-                </Select>
-                {errors.masjidId && (
-                  <p className="text-sm text-red-500">{errors.masjidId.message}</p>
-                )}
-              </div>
-
               <div className="space-y-2">
                 <Label htmlFor="title">Title *</Label>
                 <Input
@@ -203,8 +210,8 @@ export default function NewAnnouncementPage() {
             </div>
 
             <div className="flex gap-4">
-              <Button type="submit" disabled={createAnnouncement.isPending}>
-                {createAnnouncement.isPending ? "Creating..." : "Create Announcement"}
+              <Button type="submit" disabled={updateAnnouncement.isPending}>
+                {updateAnnouncement.isPending ? "Saving..." : "Save Changes"}
               </Button>
               <Link href="/dashboard/announcements">
                 <Button type="button" variant="outline">

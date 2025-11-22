@@ -55,14 +55,14 @@ export interface Device {
 }
 
 export interface Announcement {
-  id: number;
-  masjidId: number;
+  id: string;
+  masjidId: string;
   title: string;
-  content: string;
+  body: string;
   imageUrl?: string;
-  priority: "low" | "medium" | "high";
-  startDate: string;
-  endDate: string;
+  priority: number;
+  startDate?: string;
+  endDate?: string;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
@@ -70,18 +70,20 @@ export interface Announcement {
 }
 
 export interface ContentSchedule {
-  id: number;
-  masjidId: number;
-  contentType: "announcement" | "hadith" | "quran" | "donation" | "custom";
-  contentId?: number;
-  customContent?: string;
-  startTime: string;
-  endTime: string;
-  daysOfWeek: number[];
+  id: string;
+  masjidId: string;
+  name: string;
+  contentType: "PRAYER_TIMES" | "ANNOUNCEMENT" | "IMAGE" | "VIDEO" | "WEBVIEW";
+  contentId?: string;
+  url?: string;
+  startTime?: string;
+  endTime?: string;
+  days: number[];
+  duration: number;
+  priority: number;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
-  masjid?: Masjid;
 }
 
 export interface DonationCampaign {

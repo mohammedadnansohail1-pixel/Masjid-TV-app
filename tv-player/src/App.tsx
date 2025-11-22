@@ -16,6 +16,7 @@ import {
   shouldShowPrayerTimes,
   shouldShowAnnouncement,
   shouldShowMedia,
+  shouldShowWebview,
   type ContentItem,
 } from './utils/contentRotation';
 import type { TemplateType } from './types';
@@ -42,7 +43,7 @@ function App() {
     checkPairingStatus,
   } = useDeviceRegistration();
   const { prayerTimes, refresh: refreshPrayerTimes } = usePrayerTimes(masjidId);
-  const { schedule, announcements, media, refresh: refreshContent } = useContentSchedule(masjidId);
+  const { schedule, announcements, media, scheduleItems, refresh: refreshContent } = useContentSchedule(masjidId);
   const { isConnected } = useWebSocket(device?.id || null, masjidId, handleWebSocketMessage);
   const { isFullscreen } = useFullscreen(true);
 
@@ -92,8 +93,8 @@ function App() {
 
   // Create content rotation when schedule changes
   useEffect(() => {
-    if (announcements.length > 0 || media.length > 0) {
-      const rotation = createContentRotation(announcements, media);
+    if (scheduleItems.length > 0 || announcements.length > 0 || media.length > 0) {
+      const rotation = createContentRotation(announcements, media, scheduleItems);
       setContentRotation(rotation);
       setCurrentContentIndex(0);
     } else {
@@ -101,7 +102,7 @@ function App() {
       setContentRotation([]);
       setCurrentContent({ type: 'prayer', duration: 30000 });
     }
-  }, [announcements, media]);
+  }, [announcements, media, scheduleItems]);
 
   // Update current content based on index
   useEffect(() => {
@@ -123,6 +124,30 @@ function App() {
 
     return () => clearTimeout(timer);
   }, [currentContent, currentContentIndex, contentRotation]);
+
+  // Preload next content's images for instant transitions
+  useEffect(() => {
+    if (contentRotation.length <= 1) return;
+
+    const nextIndex = (currentContentIndex + 1) % contentRotation.length;
+    const nextContent = contentRotation[nextIndex];
+
+    if (nextContent?.type === 'media' && nextContent.data) {
+      const mediaData = nextContent.data as any;
+      if (mediaData.url && (mediaData.type === 'image' || !mediaData.type)) {
+        const img = new Image();
+        img.src = mediaData.url;
+      }
+    }
+
+    if (nextContent?.type === 'announcement' && nextContent.data) {
+      const announcementData = nextContent.data as any;
+      if (announcementData.imageUrl) {
+        const img = new Image();
+        img.src = announcementData.imageUrl;
+      }
+    }
+  }, [currentContentIndex, contentRotation]);
 
   // Heartbeat to backend
   useEffect(() => {
@@ -224,7 +249,25 @@ function App() {
         return <WebViewContent media={mediaItem} />;
       }
 
+      if (mediaItem.type === 'video') {
+        return (
+          <div className="min-h-screen bg-black flex items-center justify-center">
+            <video
+              src={mediaItem.url}
+              autoPlay
+              muted
+              className="max-w-full max-h-full"
+            />
+          </div>
+        );
+      }
+
       return <ImageSlideshow media={mediaItem} />;
+    }
+
+    if (shouldShowWebview(currentContent)) {
+      const webviewData = currentContent.data as { url: string };
+      return <WebViewContent media={{ url: webviewData.url, type: 'url', id: '', isActive: true }} />;
     }
 
     // Default fallback
@@ -238,9 +281,25 @@ function App() {
     );
   };
 
+  // Get unique key for current content to help React optimize transitions
+  const getContentKey = () => {
+    if (!currentContent) return 'prayer-default';
+    if (currentContent.type === 'prayer') return `prayer-${currentContentIndex}`;
+    if (currentContent.type === 'announcement' && currentContent.data) {
+      return `announcement-${(currentContent.data as any).id || currentContentIndex}`;
+    }
+    if (currentContent.type === 'media' && currentContent.data) {
+      return `media-${(currentContent.data as any).id || currentContentIndex}`;
+    }
+    if (currentContent.type === 'webview') return `webview-${currentContentIndex}`;
+    return `content-${currentContentIndex}`;
+  };
+
   return (
     <div className="relative">
-      {renderContent()}
+      <div key={getContentKey()} className="animate-fade-in">
+        {renderContent()}
+      </div>
 
       {/* Connection status indicator (only visible when not fullscreen or in debug mode) */}
       {(import.meta.env.VITE_DEBUG === 'true' || !isFullscreen) && (
