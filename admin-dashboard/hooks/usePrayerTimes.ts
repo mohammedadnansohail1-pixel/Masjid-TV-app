@@ -7,13 +7,25 @@ export function usePrayerTimes(masjidId?: string, month?: string) {
   return useQuery({
     queryKey: ["prayer-times", masjidId, month],
     queryFn: async () => {
-      const params: any = {};
-      if (masjidId) params.masjidId = masjidId;
-      if (month) params.month = month;
+      if (!masjidId) {
+        return [];
+      }
 
-      const response = await apiClient.get<PrayerTime[]>("/prayer-times", { params });
-      return response.data;
+      // Build query params for date range based on month
+      const params: any = {};
+      if (month) {
+        // Convert month (YYYY-MM) to start and end dates
+        const [year, monthNum] = month.split('-').map(Number);
+        const startDate = new Date(year, monthNum - 1, 1);
+        const endDate = new Date(year, monthNum, 0); // Last day of month
+        params.startDate = startDate.toISOString().split('T')[0];
+        params.endDate = endDate.toISOString().split('T')[0];
+      }
+
+      const response = await apiClient.get(`/prayer-times/masjid/${masjidId}`, { params });
+      return response.data?.data || response.data || [];
     },
+    enabled: !!masjidId, // Only fetch when masjidId is selected
   });
 }
 
