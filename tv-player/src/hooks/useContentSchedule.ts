@@ -1,11 +1,12 @@
 import { useState, useEffect, useCallback } from 'react';
 import { apiService } from '../services/api';
-import type { ContentSchedule, Announcement, MediaContent } from '../types';
+import type { ContentSchedule, Announcement, MediaContent, ScheduleItem } from '../types';
 
 export const useContentSchedule = (masjidId: string | null) => {
   const [schedule, setSchedule] = useState<ContentSchedule | null>(null);
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [media, setMedia] = useState<MediaContent[]>([]);
+  const [scheduleItems, setScheduleItems] = useState<ScheduleItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -23,6 +24,7 @@ export const useContentSchedule = (masjidId: string | null) => {
       setSchedule(data);
       setAnnouncements(data.announcements || []);
       setMedia(data.media || []);
+      setScheduleItems(data.contentSchedule || []);
 
       // Cache for offline use
       localStorage.setItem('cached_content_schedule', JSON.stringify(data));
@@ -38,6 +40,7 @@ export const useContentSchedule = (masjidId: string | null) => {
           setSchedule(data);
           setAnnouncements(data.announcements || []);
           setMedia(data.media || []);
+          setScheduleItems(data.contentSchedule || []);
         } catch (e) {
           console.error('Error parsing cached content:', e);
         }
@@ -86,6 +89,7 @@ export const useContentSchedule = (masjidId: string | null) => {
     schedule,
     announcements,
     media,
+    scheduleItems,
     isLoading,
     error,
     refresh,

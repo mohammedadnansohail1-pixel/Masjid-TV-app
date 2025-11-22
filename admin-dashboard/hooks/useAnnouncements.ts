@@ -3,23 +3,26 @@ import apiClient from "@/lib/api-client";
 import { Announcement } from "@/types";
 import { useToast } from "./use-toast";
 
-export function useAnnouncements(masjidId?: number) {
+export function useAnnouncements(masjidId?: string) {
   return useQuery({
     queryKey: ["announcements", masjidId],
     queryFn: async () => {
-      const params = masjidId ? { masjidId } : {};
-      const response = await apiClient.get<Announcement[]>("/announcements", { params });
-      return response.data;
+      if (!masjidId) {
+        return [];
+      }
+      const response = await apiClient.get(`/announcements/masjid/${masjidId}`);
+      return response.data?.data || response.data || [];
     },
+    enabled: !!masjidId,
   });
 }
 
-export function useAnnouncement(id: number) {
+export function useAnnouncement(id: string) {
   return useQuery({
     queryKey: ["announcements", id],
     queryFn: async () => {
-      const response = await apiClient.get<Announcement>(`/announcements/${id}`);
-      return response.data;
+      const response = await apiClient.get(`/announcements/${id}`);
+      return response.data?.data || response.data;
     },
     enabled: !!id,
   });
@@ -30,12 +33,8 @@ export function useCreateAnnouncement() {
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: async (data: FormData) => {
-      const response = await apiClient.post<Announcement>("/announcements", data, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      });
+    mutationFn: async (data: Partial<Announcement>) => {
+      const response = await apiClient.post<Announcement>("/announcements", data);
       return response.data;
     },
     onSuccess: () => {
@@ -60,12 +59,8 @@ export function useUpdateAnnouncement() {
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: async ({ id, data }: { id: number; data: FormData }) => {
-      const response = await apiClient.put<Announcement>(`/announcements/${id}`, data, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      });
+    mutationFn: async ({ id, data }: { id: string; data: Partial<Announcement> }) => {
+      const response = await apiClient.put<Announcement>(`/announcements/${id}`, data);
       return response.data;
     },
     onSuccess: (_, variables) => {
@@ -91,7 +86,7 @@ export function useDeleteAnnouncement() {
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: async (id: number) => {
+    mutationFn: async (id: string) => {
       await apiClient.delete(`/announcements/${id}`);
     },
     onSuccess: () => {

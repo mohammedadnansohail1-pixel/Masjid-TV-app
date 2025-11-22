@@ -57,6 +57,17 @@ export interface MediaContent {
   order?: number;
 }
 
+export interface ScheduleItem {
+  id: string;
+  name: string;
+  contentType: 'PRAYER_TIMES' | 'ANNOUNCEMENT' | 'IMAGE' | 'VIDEO' | 'WEBVIEW';
+  contentId?: string;
+  url?: string;
+  duration: number; // in seconds
+  priority: number;
+  isActive: boolean;
+}
+
 export interface ContentSchedule {
   announcements: Announcement[];
   media: MediaContent[];
@@ -64,6 +75,7 @@ export interface ContentSchedule {
   currentTemplate: string;
   masjidName?: string;
   masjidLogo?: string;
+  contentSchedule?: ScheduleItem[];
 }
 
 export interface WebSocketMessage {

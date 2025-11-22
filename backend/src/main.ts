@@ -1,21 +1,32 @@
 import { NestFactory, Reflector } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+import { NestExpressApplication } from '@nestjs/platform-express';
 import { AppModule } from './app.module';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
+import { join } from 'path';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
-  // Security: Helmet
-  app.use(helmet());
+  // Security: Helmet - configured to allow cross-origin media loading
+  app.use(helmet({
+    crossOriginResourcePolicy: { policy: 'cross-origin' },
+    crossOriginEmbedderPolicy: false,
+  }));
 
   // CORS
   app.enableCors({
     origin: process.env.CORS_ORIGIN?.split(',') || '*',
     credentials: true,
+  });
+
+  // Serve static files from uploads directory
+  const uploadDir = process.env.UPLOAD_DIR || './uploads';
+  app.useStaticAssets(join(process.cwd(), uploadDir), {
+    prefix: '/uploads/',
   });
 
   // Rate Limiting
@@ -44,7 +55,7 @@ async function bootstrap() {
 
   // API Prefix
   app.setGlobalPrefix('api', {
-    exclude: ['/', 'health'],
+    exclude: ['/', 'health', 'uploads/*'],
   });
 
   // Swagger Documentation
