@@ -31,13 +31,14 @@ export interface PrayerTime {
 }
 
 export interface Device {
-  id: number;
+  id: string;
   masjidId: string;
   name: string;
   pairingCode: string;
   isPaired: boolean;
   lastSeen?: string;
   displayTemplateId?: number;
+  activeTemplate?: string;
   createdAt: string;
   updatedAt: string;
   masjid?: Masjid;
