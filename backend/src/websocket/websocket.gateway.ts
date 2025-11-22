@@ -136,6 +136,19 @@ export class DeviceGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   /**
+   * Broadcast schedule update to all devices in a masjid
+   */
+  broadcastScheduleUpdate(masjidId: string, schedule?: any) {
+    this.logger.log(`Broadcasting schedule update to masjid: ${masjidId}`);
+
+    this.server.to(`masjid:${masjidId}`).emit('schedule:update', {
+      type: 'schedule_update',
+      data: schedule,
+      timestamp: new Date().toISOString(),
+    });
+  }
+
+  /**
    * Send message to specific device
    */
   sendToDevice(deviceId: string, event: string, data: any) {

@@ -6,10 +6,14 @@ import {
 import { PrismaService } from '../database/prisma.service';
 import { CreateScheduleDto, UpdateScheduleDto } from './dto';
 import { UserRole } from '@prisma/client';
+import { DeviceGateway } from '../websocket/websocket.gateway';
 
 @Injectable()
 export class SchedulesService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private deviceGateway: DeviceGateway,
+  ) {}
 
   /**
    * Create a new content schedule
@@ -36,6 +40,9 @@ export class SchedulesService {
         endTime: createDto.endTime ? new Date(`1970-01-01T${createDto.endTime}`) : null,
       },
     });
+
+    // Broadcast schedule update to TV Players
+    this.deviceGateway.broadcastScheduleUpdate(createDto.masjidId, schedule);
 
     return {
       success: true,
@@ -175,6 +182,9 @@ export class SchedulesService {
       },
     });
 
+    // Broadcast schedule update to TV Players
+    this.deviceGateway.broadcastScheduleUpdate(schedule.masjidId, updated);
+
     return {
       success: true,
       data: updated,
@@ -201,6 +211,9 @@ export class SchedulesService {
     await this.prisma.contentSchedule.delete({
       where: { id },
     });
+
+    // Broadcast schedule update to TV Players
+    this.deviceGateway.broadcastScheduleUpdate(schedule.masjidId);
 
     return {
       success: true,

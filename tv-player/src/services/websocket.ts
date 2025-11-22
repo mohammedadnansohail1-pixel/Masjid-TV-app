@@ -9,6 +9,8 @@ class WebSocketService {
   private reconnectAttempts = 0;
   private maxReconnectAttempts = 10;
   private reconnectDelay = 1000;
+  private deviceId: string | null = null;
+  private masjidId: string | null = null;
 
   connect(deviceId: string, masjidId?: string) {
     const wsUrl = import.meta.env.VITE_WS_URL || import.meta.env.VITE_API_URL || 'http://localhost:3000';
@@ -17,6 +19,9 @@ class WebSocketService {
       console.log('WebSocket already connected');
       return;
     }
+
+    this.deviceId = deviceId;
+    this.masjidId = masjidId || null;
 
     this.socket = io(wsUrl, {
       auth: {
@@ -39,6 +44,16 @@ class WebSocketService {
     this.socket.on('connect', () => {
       console.log('WebSocket connected');
       this.reconnectAttempts = 0;
+
+      // Register device with masjid room to receive broadcasts
+      if (this.masjidId) {
+        this.socket?.emit('device:register', {
+          masjidId: this.masjidId,
+          deviceId: this.deviceId,
+        });
+        console.log('Device registered with masjid:', this.masjidId);
+      }
+
       this.notifyHandlers('connected', { type: 'connected' });
     });
 
@@ -100,6 +115,33 @@ class WebSocketService {
     this.socket.on('device_paired', (data) => {
       this.notifyHandlers('device_paired', {
         type: 'device_paired',
+        data,
+      });
+    });
+
+    // Listen for schedule updates
+    this.socket.on('schedule:update', (data) => {
+      console.log('Schedule update received:', data);
+      this.notifyHandlers('schedule_updated', {
+        type: 'content_updated',
+        data,
+      });
+    });
+
+    // Listen for announcement updates from backend
+    this.socket.on('announcement:update', (data) => {
+      console.log('Announcement update received:', data);
+      this.notifyHandlers('announcement_updated', {
+        type: 'announcement_updated',
+        data,
+      });
+    });
+
+    // Listen for content updates from backend
+    this.socket.on('content:update', (data) => {
+      console.log('Content update received:', data);
+      this.notifyHandlers('content_updated', {
+        type: 'content_updated',
         data,
       });
     });
