@@ -49,6 +49,7 @@ export default function NewAnnouncementPage() {
   } = useForm<AnnouncementFormData>({
     resolver: zodResolver(announcementSchema),
     defaultValues: {
+      masjidId: 0,
       priority: "medium",
       isActive: true,
     },
@@ -96,18 +97,28 @@ export default function NewAnnouncementPage() {
               <div className="space-y-2">
                 <Label htmlFor="masjidId">Masjid *</Label>
                 <Select
-                  value={watch("masjidId")?.toString()}
-                  onValueChange={(value) => setValue("masjidId", parseInt(value))}
+                  // value={watch("masjidId")?.toString()}
+                  // onValueChange={(value) => setValue("masjidId", parseInt(value))}
+                  value={watch("masjidId") ? watch("masjidId").toString() : ""}
+                  onValueChange={(value) => setValue("masjidId", Number(value))}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select a masjid" />
                   </SelectTrigger>
-                  <SelectContent>
+                  {/* <SelectContent>
                     {masjids?.map((masjid) => (
                       <SelectItem key={masjid.id} value={masjid.id.toString()}>
                         {masjid.name}
                       </SelectItem>
                     ))}
+                  </SelectContent> */}
+                  <SelectContent>
+                    {Array.isArray(masjids) &&
+                      masjids.map((masjid) => (
+                        <SelectItem key={masjid.id} value={masjid.id.toString()}>
+                          {masjid.name}
+                        </SelectItem>
+                      ))}
                   </SelectContent>
                 </Select>
                 {errors.masjidId && (
