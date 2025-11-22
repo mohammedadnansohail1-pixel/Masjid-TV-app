@@ -6,10 +6,14 @@ import {
 import { PrismaService } from '../database/prisma.service';
 import { CreateAnnouncementDto, UpdateAnnouncementDto } from './dto';
 import { UserRole } from '@prisma/client';
+import { DeviceGateway } from '../websocket/websocket.gateway';
 
 @Injectable()
 export class AnnouncementsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private deviceGateway: DeviceGateway,
+  ) {}
 
   /**
    * Create a new announcement
@@ -37,6 +41,9 @@ export class AnnouncementsService {
         createdBy: user.id,
       },
     });
+
+    // Broadcast announcement update to TV players
+    this.deviceGateway.broadcastAnnouncementUpdate(createDto.masjidId, announcement);
 
     return {
       success: true,
@@ -167,6 +174,9 @@ export class AnnouncementsService {
       },
     });
 
+    // Broadcast announcement update to TV players
+    this.deviceGateway.broadcastAnnouncementUpdate(announcement.masjidId, updated);
+
     return {
       success: true,
       data: updated,
@@ -193,6 +203,9 @@ export class AnnouncementsService {
     await this.prisma.announcement.delete({
       where: { id },
     });
+
+    // Broadcast announcement update to TV players
+    this.deviceGateway.broadcastAnnouncementUpdate(announcement.masjidId);
 
     return {
       success: true,

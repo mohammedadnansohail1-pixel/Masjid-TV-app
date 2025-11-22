@@ -57,7 +57,9 @@ function App() {
         break;
       case 'announcement_updated':
       case 'content_updated':
-        refreshContent();
+        // Reload the entire page to get fresh content
+        console.log('Content updated, reloading page...');
+        window.location.reload();
         break;
       case 'template_changed':
         if (message.data?.template) {

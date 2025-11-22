@@ -44,7 +44,7 @@ export class DeviceGateway implements OnGatewayConnection, OnGatewayDisconnect {
    * Register a device connection
    */
   @SubscribeMessage('device:register')
-  handleDeviceRegister(
+  async handleDeviceRegister(
     @MessageBody() data: { masjidId: string; deviceId?: string; pairingCode?: string },
     @ConnectedSocket() client: Socket,
   ) {
@@ -59,14 +59,17 @@ export class DeviceGateway implements OnGatewayConnection, OnGatewayDisconnect {
     this.connectedDevices.set(client.id, connection);
 
     // Join masjid room for targeted broadcasts
-    client.join(`masjid:${data.masjidId}`);
+    const room = `masjid:${data.masjidId}`;
+    client.join(room);
 
     if (data.deviceId) {
       client.join(`device:${data.deviceId}`);
     }
 
+    // Log registration details
+    const socketsInRoom = await this.server.in(room).fetchSockets();
     this.logger.log(
-      `Device registered: ${data.deviceId || data.pairingCode} for masjid ${data.masjidId}`,
+      `Device registered: ${data.deviceId || data.pairingCode} for masjid ${data.masjidId} - Room ${room} now has ${socketsInRoom.length} clients`,
     );
 
     return {
@@ -125,12 +128,29 @@ export class DeviceGateway implements OnGatewayConnection, OnGatewayDisconnect {
   /**
    * Broadcast announcement update to all devices in a masjid
    */
-  broadcastAnnouncementUpdate(masjidId: string, announcement: any) {
-    this.logger.log(`Broadcasting announcement update to masjid: ${masjidId}`);
+  async broadcastAnnouncementUpdate(masjidId: string, announcement?: any) {
+    const room = `masjid:${masjidId}`;
+    const sockets = await this.server.in(room).fetchSockets();
+    this.logger.log(`Broadcasting announcement update to room ${room} - ${sockets.length} clients connected`);
 
-    this.server.to(`masjid:${masjidId}`).emit('announcement:update', {
+    this.server.to(room).emit('announcement:update', {
       type: 'announcement_update',
       data: announcement,
+      timestamp: new Date().toISOString(),
+    });
+  }
+
+  /**
+   * Broadcast schedule update to all devices in a masjid
+   */
+  async broadcastScheduleUpdate(masjidId: string, schedule?: any) {
+    const room = `masjid:${masjidId}`;
+    const sockets = await this.server.in(room).fetchSockets();
+    this.logger.log(`Broadcasting schedule update to room ${room} - ${sockets.length} clients connected`);
+
+    this.server.to(room).emit('schedule:update', {
+      type: 'schedule_update',
+      data: schedule,
       timestamp: new Date().toISOString(),
     });
   }
