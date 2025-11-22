@@ -15,16 +15,24 @@ export const useDeviceRegistration = () => {
         const savedDeviceId = localStorage.getItem('device_id');
         const savedMasjidId = localStorage.getItem('masjid_id');
 
-        if (savedDeviceId && savedMasjidId) {
-          // Device was previously registered and paired
+        if (savedDeviceId) {
+          // Device was previously registered, check its status
           const deviceInfo = await apiService.getDeviceInfo(savedDeviceId);
           setDevice(deviceInfo);
-          setIsPaired(true);
-        } else if (savedDeviceId) {
-          // Device registered but not paired yet
-          const deviceInfo = await apiService.getDeviceInfo(savedDeviceId);
-          setDevice(deviceInfo);
-          setIsPaired(false);
+
+          // Check if device is paired (either from localStorage or from API response)
+          if (savedMasjidId || (deviceInfo.isPaired && deviceInfo.masjid?.id)) {
+            setIsPaired(true);
+            // Sync localStorage with actual device state
+            if (deviceInfo.masjid?.id) {
+              localStorage.setItem('masjid_id', deviceInfo.masjid.id);
+              if (deviceInfo.masjid.name) {
+                localStorage.setItem('masjid_name', deviceInfo.masjid.name);
+              }
+            }
+          } else {
+            setIsPaired(false);
+          }
         } else {
           // New device - need to register
           await registerNewDevice();
