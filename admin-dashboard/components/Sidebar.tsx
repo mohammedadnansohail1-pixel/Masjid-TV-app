@@ -11,6 +11,7 @@ import {
   Megaphone,
   Calendar,
   Heart,
+  Image,
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
@@ -24,6 +25,7 @@ const navigation = [
   { name: "Devices", href: "/dashboard/devices", icon: Monitor },
   { name: "Announcements", href: "/dashboard/announcements", icon: Megaphone },
   { name: "Schedules", href: "/dashboard/schedules", icon: Calendar },
+  { name: "Media Library", href: "/dashboard/media", icon: Image },
   { name: "Donations", href: "/dashboard/donations", icon: Heart },
 ];
 

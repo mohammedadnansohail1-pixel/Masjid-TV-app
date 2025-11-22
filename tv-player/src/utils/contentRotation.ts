@@ -1,20 +1,109 @@
-import type { Announcement, MediaContent } from '../types';
+import type { Announcement, MediaContent, ScheduleItem } from '../types';
 
 export interface ContentItem {
-  type: 'announcement' | 'media' | 'prayer';
-  data?: Announcement | MediaContent;
-  duration: number;
+  type: 'announcement' | 'media' | 'prayer' | 'webview';
+  data?: Announcement | MediaContent | { url: string };
+  duration: number; // in milliseconds
+  scheduleId?: string;
 }
 
-export const DEFAULT_CONTENT_DURATION = 10000; // 10 seconds
-export const PRAYER_DISPLAY_DURATION = 30000; // 30 seconds
+export const DEFAULT_CONTENT_DURATION = 10000; // 10 seconds in ms
+export const PRAYER_DISPLAY_DURATION = 30000; // 30 seconds in ms
 
+/**
+ * Create content rotation from schedule items
+ * Uses schedule durations when available, falls back to defaults
+ */
 export const createContentRotation = (
   announcements: Announcement[],
-  media: MediaContent[]
+  media: MediaContent[],
+  scheduleItems?: ScheduleItem[]
 ): ContentItem[] => {
   const rotation: ContentItem[] = [];
 
+  // If we have schedule items, use them for rotation with their durations
+  if (scheduleItems && scheduleItems.length > 0) {
+    // Sort by priority (higher first)
+    const sortedSchedules = [...scheduleItems]
+      .filter(s => s.isActive)
+      .sort((a, b) => (b.priority || 0) - (a.priority || 0));
+
+    sortedSchedules.forEach((schedule) => {
+      // Duration from schedule is in seconds, convert to milliseconds
+      const durationMs = (schedule.duration || 30) * 1000;
+
+      switch (schedule.contentType) {
+        case 'PRAYER_TIMES':
+          rotation.push({
+            type: 'prayer',
+            duration: durationMs,
+            scheduleId: schedule.id,
+          });
+          break;
+
+        case 'ANNOUNCEMENT':
+          // Find the linked announcement
+          const announcement = schedule.contentId
+            ? announcements.find(a => a.id === schedule.contentId)
+            : null;
+
+          if (announcement) {
+            rotation.push({
+              type: 'announcement',
+              data: announcement,
+              duration: durationMs,
+              scheduleId: schedule.id,
+            });
+          } else if (!schedule.contentId) {
+            // If no specific announcement, rotate through all active ones
+            announcements.forEach(ann => {
+              rotation.push({
+                type: 'announcement',
+                data: ann,
+                duration: durationMs,
+                scheduleId: schedule.id,
+              });
+            });
+          }
+          break;
+
+        case 'IMAGE':
+        case 'VIDEO':
+          // Find the linked media
+          const mediaItem = schedule.contentId
+            ? media.find(m => m.id === schedule.contentId)
+            : null;
+
+          if (mediaItem) {
+            rotation.push({
+              type: 'media',
+              data: mediaItem,
+              duration: durationMs,
+              scheduleId: schedule.id,
+            });
+          }
+          break;
+
+        case 'WEBVIEW':
+          if (schedule.url) {
+            rotation.push({
+              type: 'webview',
+              data: { url: schedule.url },
+              duration: durationMs,
+              scheduleId: schedule.id,
+            });
+          }
+          break;
+      }
+    });
+
+    // If we have rotation items, return them
+    if (rotation.length > 0) {
+      return rotation;
+    }
+  }
+
+  // Fallback: Create rotation from announcements and media directly (legacy behavior)
   // Add high priority announcements first
   const priorityAnnouncements = announcements
     .filter((a) => a.priority && a.priority > 5)
@@ -35,7 +124,7 @@ export const createContentRotation = (
     rotation.push({
       type: 'media',
       data: item,
-      duration: item.duration || DEFAULT_CONTENT_DURATION,
+      duration: (item.duration || 10) * 1000, // Convert seconds to ms
     });
   });
 
@@ -106,4 +195,8 @@ export const shouldShowAnnouncement = (item: ContentItem): boolean => {
 
 export const shouldShowMedia = (item: ContentItem): boolean => {
   return item.type === 'media' && !!item.data;
+};
+
+export const shouldShowWebview = (item: ContentItem): boolean => {
+  return item.type === 'webview' && !!item.data;
 };

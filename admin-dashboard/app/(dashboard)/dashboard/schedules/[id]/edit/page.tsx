@@ -6,6 +6,8 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useSchedule, useUpdateSchedule } from "@/hooks/useSchedules";
+import { useAnnouncements } from "@/hooks/useAnnouncements";
+import { useMedia, MediaItem } from "@/hooks/useMedia";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -82,6 +84,20 @@ export default function EditSchedulePage() {
 
   const contentType = watch("contentType");
   const selectedDays = watch("days") || [];
+
+  // Get masjidId from schedule for fetching related data
+  const masjidId = schedule?.masjidId;
+
+  // Fetch announcements for ANNOUNCEMENT content type
+  const { data: announcements } = useAnnouncements(
+    contentType === "ANNOUNCEMENT" ? masjidId : undefined
+  );
+
+  // Fetch media for IMAGE/VIDEO content types
+  const { data: mediaItems } = useMedia(
+    (contentType === "IMAGE" || contentType === "VIDEO") ? masjidId : undefined,
+    contentType === "IMAGE" ? "IMAGE" : contentType === "VIDEO" ? "VIDEO" : undefined
+  );
 
   useEffect(() => {
     if (schedule) {
@@ -220,6 +236,62 @@ export default function EditSchedulePage() {
                   </SelectContent>
                 </Select>
               </div>
+
+              {contentType === "ANNOUNCEMENT" && masjidId && (
+                <div className="space-y-2">
+                  <Label htmlFor="contentId">Select Announcement</Label>
+                  <Select
+                    value={watch("contentId") || ""}
+                    onValueChange={(value) => setValue("contentId", value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Choose an announcement" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Array.isArray(announcements) &&
+                        announcements.map((ann: any) => (
+                          <SelectItem key={ann.id} value={ann.id}>
+                            {ann.title}
+                          </SelectItem>
+                        ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
+              {(contentType === "IMAGE" || contentType === "VIDEO") && masjidId && (
+                <div className="space-y-2">
+                  <Label htmlFor="contentId">
+                    Select {contentType === "IMAGE" ? "Image" : "Video"} *
+                  </Label>
+                  <Select
+                    value={watch("contentId") || ""}
+                    onValueChange={(value) => setValue("contentId", value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder={`Choose ${contentType === "IMAGE" ? "an image" : "a video"}`} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Array.isArray(mediaItems) && mediaItems.length > 0 ? (
+                        mediaItems.map((item: MediaItem) => (
+                          <SelectItem key={item.id} value={item.id}>
+                            {item.originalName}
+                          </SelectItem>
+                        ))
+                      ) : (
+                        <div className="p-2 text-sm text-muted-foreground text-center">
+                          No {contentType === "IMAGE" ? "images" : "videos"} uploaded yet.
+                          <br />
+                          Upload files in the Media Library.
+                        </div>
+                      )}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">
+                    Upload files in the <a href="/dashboard/media" className="text-primary underline">Media Library</a> first
+                  </p>
+                </div>
+              )}
 
               {contentType === "WEBVIEW" && (
                 <div className="space-y-2">

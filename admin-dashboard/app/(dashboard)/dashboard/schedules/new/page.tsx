@@ -7,6 +7,7 @@ import * as z from "zod";
 import { useMasjids } from "@/hooks/useMasjids";
 import { useAnnouncements } from "@/hooks/useAnnouncements";
 import { useCreateSchedule } from "@/hooks/useSchedules";
+import { useMedia, MediaItem } from "@/hooks/useMedia";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -84,6 +85,12 @@ export default function NewSchedulePage() {
 
   const { data: announcements } = useAnnouncements(
     contentType === "ANNOUNCEMENT" ? selectedMasjid : undefined
+  );
+
+  // Fetch media for IMAGE/VIDEO content types
+  const { data: mediaItems } = useMedia(
+    (contentType === "IMAGE" || contentType === "VIDEO") ? selectedMasjid : undefined,
+    contentType === "IMAGE" ? "IMAGE" : contentType === "VIDEO" ? "VIDEO" : undefined
   );
 
   const toggleDay = (day: number) => {
@@ -206,6 +213,40 @@ export default function NewSchedulePage() {
                         ))}
                     </SelectContent>
                   </Select>
+                </div>
+              )}
+
+              {(contentType === "IMAGE" || contentType === "VIDEO") && selectedMasjid && (
+                <div className="space-y-2">
+                  <Label htmlFor="contentId">
+                    Select {contentType === "IMAGE" ? "Image" : "Video"} *
+                  </Label>
+                  <Select
+                    value={watch("contentId") || ""}
+                    onValueChange={(value) => setValue("contentId", value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder={`Choose ${contentType === "IMAGE" ? "an image" : "a video"}`} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Array.isArray(mediaItems) && mediaItems.length > 0 ? (
+                        mediaItems.map((item: MediaItem) => (
+                          <SelectItem key={item.id} value={item.id}>
+                            {item.originalName}
+                          </SelectItem>
+                        ))
+                      ) : (
+                        <div className="p-2 text-sm text-muted-foreground text-center">
+                          No {contentType === "IMAGE" ? "images" : "videos"} uploaded yet.
+                          <br />
+                          Upload files in the Media Library.
+                        </div>
+                      )}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">
+                    Upload files in the <a href="/dashboard/media" className="text-primary underline">Media Library</a> first
+                  </p>
                 </div>
               )}
 

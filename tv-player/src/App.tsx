@@ -16,6 +16,7 @@ import {
   shouldShowPrayerTimes,
   shouldShowAnnouncement,
   shouldShowMedia,
+  shouldShowWebview,
   type ContentItem,
 } from './utils/contentRotation';
 import type { TemplateType } from './types';
@@ -42,7 +43,7 @@ function App() {
     checkPairingStatus,
   } = useDeviceRegistration();
   const { prayerTimes, refresh: refreshPrayerTimes } = usePrayerTimes(masjidId);
-  const { schedule, announcements, media, refresh: refreshContent } = useContentSchedule(masjidId);
+  const { schedule, announcements, media, scheduleItems, refresh: refreshContent } = useContentSchedule(masjidId);
   const { isConnected } = useWebSocket(device?.id || null, masjidId, handleWebSocketMessage);
   const { isFullscreen } = useFullscreen(true);
 
@@ -92,8 +93,8 @@ function App() {
 
   // Create content rotation when schedule changes
   useEffect(() => {
-    if (announcements.length > 0 || media.length > 0) {
-      const rotation = createContentRotation(announcements, media);
+    if (scheduleItems.length > 0 || announcements.length > 0 || media.length > 0) {
+      const rotation = createContentRotation(announcements, media, scheduleItems);
       setContentRotation(rotation);
       setCurrentContentIndex(0);
     } else {
@@ -101,7 +102,7 @@ function App() {
       setContentRotation([]);
       setCurrentContent({ type: 'prayer', duration: 30000 });
     }
-  }, [announcements, media]);
+  }, [announcements, media, scheduleItems]);
 
   // Update current content based on index
   useEffect(() => {
@@ -224,7 +225,25 @@ function App() {
         return <WebViewContent media={mediaItem} />;
       }
 
+      if (mediaItem.type === 'video') {
+        return (
+          <div className="min-h-screen bg-black flex items-center justify-center">
+            <video
+              src={mediaItem.url}
+              autoPlay
+              muted
+              className="max-w-full max-h-full"
+            />
+          </div>
+        );
+      }
+
       return <ImageSlideshow media={mediaItem} />;
+    }
+
+    if (shouldShowWebview(currentContent)) {
+      const webviewData = currentContent.data as { url: string };
+      return <WebViewContent media={{ url: webviewData.url, type: 'url', id: '', isActive: true }} />;
     }
 
     // Default fallback
