@@ -30,6 +30,15 @@ import { Request } from 'express';
 export class DevicesController {
   constructor(private readonly devicesService: DevicesService) {}
 
+  @Get()
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get all devices (filtered by user role)' })
+  @ApiResponse({ status: 200, description: 'Devices retrieved' })
+  async findAllForUser(@CurrentUser() user: any) {
+    return this.devicesService.findAllForUser(user);
+  }
+
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.SUPER_ADMIN, UserRole.MASJID_ADMIN)
