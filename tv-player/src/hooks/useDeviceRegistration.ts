@@ -1,213 +1,143 @@
-// import { useState, useEffect, useCallback } from 'react';
-// import { apiService } from '../services/api';
-// import type { Device } from '../types';
-
-// export const useDeviceRegistration = () => {
-//   const [device, setDevice] = useState<Device | null>(null);
-//   const [isLoading, setIsLoading] = useState(true);
-//   const [error, setError] = useState<string | null>(null);
-//   const [isPaired, setIsPaired] = useState(false);
-
-//   // Load device from localStorage
-//   useEffect(() => {
-//     const loadDevice = async () => {
-//       try {
-//         const savedDeviceId = localStorage.getItem('device_id');
-//         const savedMasjidId = localStorage.getItem('masjid_id');
-
-//         if (savedDeviceId && savedMasjidId) {
-//           // Device was previously registered and paired
-//           const deviceInfo = await apiService.getDeviceInfo(savedDeviceId);
-//           setDevice(deviceInfo);
-//           setIsPaired(true);
-//         } else if (savedDeviceId) {
-//           // Device registered but not paired yet
-//           const deviceInfo = await apiService.getDeviceInfo(savedDeviceId);
-//           setDevice(deviceInfo);
-//           setIsPaired(false);
-//         } else {
-//           // New device - need to register
-//           await registerNewDevice();
-//         }
-//       } catch (err) {
-//         console.error('Error loading device:', err);
-//         // If there's an error, try registering a new device
-//         await registerNewDevice();
-//       } finally {
-//         setIsLoading(false);
-//       }
-//     };
-
-//     loadDevice();
-//   }, []);
-
-//   const registerNewDevice = async () => {
-//     try {
-//       setIsLoading(true);
-//       setError(null);
-
-//       const response = await apiService.registerDevice();
-//       const newDevice = response.device;
-
-//       setDevice(newDevice);
-//       localStorage.setItem('device_id', newDevice.id);
-//       localStorage.setItem('pairing_code', newDevice.pairingCode);
-
-//       setIsPaired(false);
-//     } catch (err: any) {
-//       setError(err.message || 'Failed to register device');
-//       console.error('Device registration error:', err);
-//     } finally {
-//       setIsLoading(false);
-//     }
-//   };
-
-//   const checkPairingStatus = useCallback(async () => {
-//     if (!device) return false;
-
-//     try {
-//       const status = await apiService.checkPairingStatus(device.id);
-
-//       if (status.isPaired && status.masjidId) {
-//         setIsPaired(true);
-//         localStorage.setItem('masjid_id', status.masjidId);
-//         if (status.masjidName) {
-//           localStorage.setItem('masjid_name', status.masjidName);
-//         }
-//         return true;
-//       }
-
-//       return false;
-//     } catch (err) {
-//       console.error('Error checking pairing status:', err);
-//       return false;
-//     }
-//   }, [device]);
-
-//   const resetDevice = useCallback(() => {
-//     localStorage.removeItem('device_id');
-//     localStorage.removeItem('masjid_id');
-//     localStorage.removeItem('masjid_name');
-//     localStorage.removeItem('pairing_code');
-//     localStorage.removeItem('device_token');
-//     apiService.clearAuthToken();
-//     setDevice(null);
-//     setIsPaired(false);
-//     registerNewDevice();
-//   }, []);
-
-//   return {
-//     device,
-//     isPaired,
-//     isLoading,
-//     error,
-//     checkPairingStatus,
-//     resetDevice,
-//   };
-// };
-
-import { useState, useEffect, useCallback } from "react";
-import { apiService } from "../services/api";
+import { useState, useEffect, useCallback } from 'react';
+import { apiService } from '../services/api';
+import type { Device } from '../types';
 
 export const useDeviceRegistration = () => {
-  const [device, setDevice] = useState<any>(null);
-  const [isPaired, setIsPaired] = useState(false);
+  const [device, setDevice] = useState<Device | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [isPaired, setIsPaired] = useState(false);
 
-  const pairingCode = localStorage.getItem("pairing_code");
-  const masjidId = localStorage.getItem("masjid_id");
-
-  // Load device from localStorage (paired or not)
+  // Load device from localStorage
   useEffect(() => {
-    async function load() {
-      setIsLoading(true);
+    const loadDevice = async () => {
+      const savedDeviceId = localStorage.getItem('device_id');
+      const savedMasjidId = localStorage.getItem('masjid_id');
+
+      // If we have masjid_id in localStorage, device is already paired
+      // Even if API call fails, trust the localStorage state
+      if (savedMasjidId && savedDeviceId) {
+        setIsPaired(true);
+        setDevice({
+          id: savedDeviceId,
+          pairingCode: localStorage.getItem('pairing_code') || '',
+          isPaired: true,
+          name: 'TV Display',
+        } as Device);
+
+        // Try to refresh device info from API, but don't fail if it doesn't work
+        try {
+          const deviceInfo = await apiService.getDeviceInfo(savedDeviceId);
+          setDevice(deviceInfo);
+          // Sync localStorage with actual device state
+          if (deviceInfo.masjid?.id) {
+            localStorage.setItem('masjid_id', deviceInfo.masjid.id);
+            if (deviceInfo.masjid.name) {
+              localStorage.setItem('masjid_name', deviceInfo.masjid.name);
+            }
+          }
+        } catch (err) {
+          console.warn('Could not refresh device info from API:', err);
+          // Keep using localStorage values - device is still paired
+        }
+        setIsLoading(false);
+        return;
+      }
 
       try {
-        if (pairingCode) {
-          // See if this pairing code is still valid
-          const config = await apiService.pairDevice(pairingCode);
+        if (savedDeviceId) {
+          // Device was previously registered, check its status
+          const deviceInfo = await apiService.getDeviceInfo(savedDeviceId);
+          setDevice(deviceInfo);
 
-          setDevice(config.data);
-          setIsPaired(true);
-
-          // Store masjid ID & name
-          if (config.data.masjidId)
-            localStorage.setItem("masjid_id", config.data.masjidId);
-          if (config.data.masjidName)
-            localStorage.setItem("masjid_name", config.data.masjidName);
-
-          setIsLoading(false);
-          return;
+          // Check if device is paired from API response
+          if (deviceInfo.isPaired && deviceInfo.masjid?.id) {
+            setIsPaired(true);
+            localStorage.setItem('masjid_id', deviceInfo.masjid.id);
+            if (deviceInfo.masjid.name) {
+              localStorage.setItem('masjid_name', deviceInfo.masjid.name);
+            }
+          } else {
+            setIsPaired(false);
+          }
+        } else {
+          // New device - need to register
+          await registerNewDevice();
         }
       } catch (err) {
-        // pairing code invalid → must enter a new one
-        setIsPaired(false);
+        console.error('Error loading device:', err);
+        // Only register new device if we don't have a masjid_id
+        if (!savedMasjidId) {
+          await registerNewDevice();
+        }
+      } finally {
+        setIsLoading(false);
       }
+    };
 
-      setIsLoading(false);
-    }
-
-    load();
+    loadDevice();
   }, []);
 
-  // TV App calls this when user enters code
-  const pairDevice = async (pairingCode: string): Promise<boolean> => {
+  const registerNewDevice = async () => {
     try {
-      const response = await apiService.pairDevice(pairingCode);
+      setIsLoading(true);
+      setError(null);
 
-      if (!response || !response.device) {
-        return false;
-      }
+      const response = await apiService.registerDevice();
+      const newDevice = response.device;
 
-      const device = response.device;
+      setDevice(newDevice);
+      localStorage.setItem('device_id', newDevice.id);
+      localStorage.setItem('pairing_code', newDevice.pairingCode);
 
-      // Save device info
-      localStorage.setItem('device_id', device.id);
-      localStorage.setItem('masjid_id', device.masjidId);
-      if (device.masjidName) {
-        localStorage.setItem('masjid_name', device.masjidName);
-      }
-
-      setDevice(device);
-      setIsPaired(true);
-      return true;
-    } catch (err) {
-      console.error("Pairing failed:", err);
-      return false;
+      setIsPaired(false);
+    } catch (err: any) {
+      setError(err.message || 'Failed to register device');
+      console.error('Device registration error:', err);
+    } finally {
+      setIsLoading(false);
     }
   };
 
-
-  // Allows DeviceSetup to re-check pairing status
   const checkPairingStatus = useCallback(async () => {
-    if (!pairingCode) return false;
+    if (!device) return false;
 
     try {
-      const config = await apiService.pairDevice(pairingCode);
+      const status = await apiService.checkPairingStatus(device.id);
 
-      setDevice(config.data);
-      setIsPaired(true);
-      return true;
-    } catch {
-      setIsPaired(false);
+      if (status.isPaired && status.masjidId) {
+        setIsPaired(true);
+        localStorage.setItem('masjid_id', status.masjidId);
+        if (status.masjidName) {
+          localStorage.setItem('masjid_name', status.masjidName);
+        }
+        return true;
+      }
+
+      return false;
+    } catch (err) {
+      console.error('Error checking pairing status:', err);
       return false;
     }
-  }, [pairingCode]);
+  }, [device]);
 
   const resetDevice = useCallback(() => {
-    localStorage.removeItem("pairing_code");
-    localStorage.removeItem("masjid_id");
-    localStorage.removeItem("masjid_name");
-
+    localStorage.removeItem('device_id');
+    localStorage.removeItem('masjid_id');
+    localStorage.removeItem('masjid_name');
+    localStorage.removeItem('pairing_code');
+    localStorage.removeItem('device_token');
+    apiService.clearAuthToken();
     setDevice(null);
     setIsPaired(false);
+    registerNewDevice();
   }, []);
 
   return {
     device,
     isPaired,
     isLoading,
-    pairDevice,
+    error,
     checkPairingStatus,
     resetDevice,
   };
