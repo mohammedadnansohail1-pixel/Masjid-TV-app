@@ -30,7 +30,7 @@ export default function DevicesPage() {
   const { data: devices, isLoading } = useDevices();
   const deleteDevice = useDeleteDevice();
   const [searchQuery, setSearchQuery] = useState("");
-  const [deleteDialog, setDeleteDialog] = useState<number | null>(null);
+  const [deleteDialog, setDeleteDialog] = useState<string | null>(null);
 
   const filteredDevices = devices?.filter((device) =>
     device.name.toLowerCase().includes(searchQuery.toLowerCase())

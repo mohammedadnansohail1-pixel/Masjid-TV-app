@@ -3,7 +3,7 @@ import apiClient from "@/lib/api-client";
 import { Device } from "@/types";
 import { useToast } from "./use-toast";
 
-export function useDevices(masjidId?: number) {
+export function useDevices(masjidId?: string) {
   return useQuery({
     queryKey: ["devices", masjidId],
     queryFn: async () => {
@@ -14,7 +14,7 @@ export function useDevices(masjidId?: number) {
   });
 }
 
-export function useDevice(id: number) {
+export function useDevice(id: string) {
   return useQuery({
     queryKey: ["devices", id],
     queryFn: async () => {
@@ -56,7 +56,7 @@ export function useUpdateDevice() {
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: async ({ id, data }: { id: number; data: Partial<Device> }) => {
+    mutationFn: async ({ id, data }: { id: string; data: Partial<Device> }) => {
       const response = await apiClient.put<Device>(`/devices/${id}`, data);
       return response.data;
     },
@@ -83,7 +83,7 @@ export function useDeleteDevice() {
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: async (id: number) => {
+    mutationFn: async (id: string) => {
       await apiClient.delete(`/devices/${id}`);
     },
     onSuccess: () => {

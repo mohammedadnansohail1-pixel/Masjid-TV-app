@@ -22,7 +22,7 @@ import Link from "next/link";
 
 const deviceSchema = z.object({
   name: z.string().min(1, "Name is required"),
-  masjidId: z.number({ required_error: "Masjid is required" }),
+  masjidId: z.string({ required_error: "Masjid is required" }),
 });
 
 type DeviceFormData = z.infer<typeof deviceSchema>;
@@ -83,15 +83,15 @@ export default function NewDevicePage() {
               <div className="space-y-2">
                 <Label htmlFor="masjidId">Masjid *</Label>
                 <Select
-                  value={watch("masjidId")?.toString()}
-                  onValueChange={(value) => setValue("masjidId", parseInt(value))}
+                  value={watch("masjidId")}
+                  onValueChange={(value) => setValue("masjidId", value)}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select a masjid" />
                   </SelectTrigger>
                   <SelectContent>
                     {masjids?.map((masjid) => (
-                      <SelectItem key={masjid.id} value={masjid.id.toString()}>
+                      <SelectItem key={masjid.id} value={String(masjid.id)}>
                         {masjid.name}
                       </SelectItem>
                     ))}
