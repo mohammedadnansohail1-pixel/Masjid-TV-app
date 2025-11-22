@@ -1,5 +1,5 @@
 export interface Masjid {
-  id: number;
+  id: string;
   name: string;
   address: string;
   city: string;
@@ -17,8 +17,8 @@ export interface Masjid {
 }
 
 export interface PrayerTime {
-  id: number;
-  masjidId: number;
+  id: string;
+  masjidId: string;
   date: string;
   fajr: string;
   sunrise: string;
@@ -26,6 +26,16 @@ export interface PrayerTime {
   asr: string;
   maghrib: string;
   isha: string;
+  // Iqamah times (manually set)
+  fajrIqamah?: string;
+  dhuhrIqamah?: string;
+  asrIqamah?: string;
+  maghribIqamah?: string;
+  ishaIqamah?: string;
+  // Jumuah times
+  jumuah1?: string;
+  jumuah2?: string;
+  isManual?: boolean;
   createdAt: string;
   updatedAt: string;
 }

@@ -76,13 +76,34 @@ export const Template2 = ({ prayerTimes, masjidName, masjidLogo }: Template2Prop
                   </p>
                 </div>
 
-                {/* Time */}
-                <div
-                  className={`text-5xl font-bold font-mono ${
-                    isNext ? 'text-white' : 'text-islamic-gold'
-                  }`}
-                >
-                  {formatTime(prayer.time)}
+                {/* Times */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className={`text-lg ${isNext ? 'text-white/80' : 'text-white/60'}`}>
+                      Adhan
+                    </span>
+                    <span
+                      className={`text-4xl font-bold font-mono ${
+                        isNext ? 'text-white' : 'text-white/90'
+                      }`}
+                    >
+                      {formatTime(prayer.time)}
+                    </span>
+                  </div>
+                  {prayer.iqamahTime && (
+                    <div className="flex items-center justify-between">
+                      <span className={`text-lg ${isNext ? 'text-white/80' : 'text-islamic-gold/80'}`}>
+                        Iqamah
+                      </span>
+                      <span
+                        className={`text-4xl font-bold font-mono ${
+                          isNext ? 'text-yellow-200' : 'text-islamic-gold'
+                        }`}
+                      >
+                        {formatTime(prayer.iqamahTime)}
+                      </span>
+                    </div>
+                  )}
                 </div>
 
                 {/* Next indicator */}
