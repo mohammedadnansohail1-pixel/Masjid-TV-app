@@ -1,5 +1,5 @@
 export interface Masjid {
-  id: number;
+  id: string;
   name: string;
   address: string;
   city: string;
@@ -17,8 +17,8 @@ export interface Masjid {
 }
 
 export interface PrayerTime {
-  id: number;
-  masjidId: number;
+  id: string;
+  masjidId: string;
   date: string;
   fajr: string;
   sunrise: string;

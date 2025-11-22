@@ -37,7 +37,7 @@ import { formatDate, formatTime } from "@/lib/utils";
 import { PrayerTime } from "@/types";
 
 export default function PrayerTimesPage() {
-  const [selectedMasjid, setSelectedMasjid] = useState<number | undefined>();
+  const [selectedMasjid, setSelectedMasjid] = useState<string | undefined>();
   const [selectedMonth, setSelectedMonth] = useState<string>(
     new Date().toISOString().slice(0, 7)
   );
@@ -73,7 +73,7 @@ export default function PrayerTimesPage() {
     if (!editingPrayerTime) return;
 
     await updatePrayerTime.mutateAsync({
-      masjidId: String(editingPrayerTime.masjidId),
+      masjidId: editingPrayerTime.masjidId,
       date: editingPrayerTime.date,
       data: {
         fajrIqamah: iqamahValues.fajrIqamah || undefined,
@@ -123,9 +123,9 @@ export default function PrayerTimesPage() {
             <div className="space-y-2">
               <label className="text-sm font-medium">Masjid</label>
               <Select
-                value={selectedMasjid?.toString() || "all"}
+                value={selectedMasjid || "all"}
                 onValueChange={(value) =>
-                  setSelectedMasjid(value === "all" ? undefined : parseInt(value))
+                  setSelectedMasjid(value === "all" ? undefined : value)
                 }
               >
                 <SelectTrigger>
@@ -134,7 +134,7 @@ export default function PrayerTimesPage() {
                 <SelectContent>
                   <SelectItem value="all">All Masjids</SelectItem>
                   {masjids?.map((masjid) => (
-                    <SelectItem key={masjid.id} value={masjid.id.toString()}>
+                    <SelectItem key={masjid.id} value={masjid.id}>
                       {masjid.name}
                     </SelectItem>
                   ))}

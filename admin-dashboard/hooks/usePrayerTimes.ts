@@ -3,7 +3,7 @@ import apiClient from "@/lib/api-client";
 import { PrayerTime } from "@/types";
 import { useToast } from "./use-toast";
 
-export function usePrayerTimes(masjidId?: number, month?: string) {
+export function usePrayerTimes(masjidId?: string, month?: string) {
   return useQuery({
     queryKey: ["prayer-times", masjidId, month],
     queryFn: async () => {
