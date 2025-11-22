@@ -121,6 +121,34 @@ export const useDeviceRegistration = () => {
     }
   }, [device]);
 
+  // Pair device with a pairing code
+  const pairDevice = useCallback(async (pairingCode: string): Promise<boolean> => {
+    try {
+      const response = await apiService.pairDevice(pairingCode);
+
+      if (!response || !response.device) {
+        return false;
+      }
+
+      const pairedDevice = response.device;
+
+      // Save device info
+      localStorage.setItem('device_id', pairedDevice.id);
+      localStorage.setItem('pairing_code', pairingCode);
+      localStorage.setItem('masjid_id', pairedDevice.masjidId);
+      if (pairedDevice.masjidName) {
+        localStorage.setItem('masjid_name', pairedDevice.masjidName);
+      }
+
+      setDevice(pairedDevice);
+      setIsPaired(true);
+      return true;
+    } catch (err) {
+      console.error('Pairing failed:', err);
+      return false;
+    }
+  }, []);
+
   const resetDevice = useCallback(() => {
     localStorage.removeItem('device_id');
     localStorage.removeItem('masjid_id');
@@ -138,6 +166,7 @@ export const useDeviceRegistration = () => {
     isPaired,
     isLoading,
     error,
+    pairDevice,
     checkPairingStatus,
     resetDevice,
   };

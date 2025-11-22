@@ -25,31 +25,37 @@ export const getPrayerList = (prayerTimes: PrayerTimes): PrayerTime[] => {
       name: PRAYER_NAMES.fajr,
       arabicName: PRAYER_ARABIC_NAMES.fajr,
       time: prayerTimes.fajr,
+      iqamah: prayerTimes.fajrIqamah,
     },
     {
       name: PRAYER_NAMES.sunrise,
       arabicName: PRAYER_ARABIC_NAMES.sunrise,
       time: prayerTimes.sunrise,
+      // No iqamah for sunrise
     },
     {
       name: PRAYER_NAMES.dhuhr,
       arabicName: PRAYER_ARABIC_NAMES.dhuhr,
       time: prayerTimes.dhuhr,
+      iqamah: prayerTimes.dhuhrIqamah,
     },
     {
       name: PRAYER_NAMES.asr,
       arabicName: PRAYER_ARABIC_NAMES.asr,
       time: prayerTimes.asr,
+      iqamah: prayerTimes.asrIqamah,
     },
     {
       name: PRAYER_NAMES.maghrib,
       arabicName: PRAYER_ARABIC_NAMES.maghrib,
       time: prayerTimes.maghrib,
+      iqamah: prayerTimes.maghribIqamah,
     },
     {
       name: PRAYER_NAMES.isha,
       arabicName: PRAYER_ARABIC_NAMES.isha,
       time: prayerTimes.isha,
+      iqamah: prayerTimes.ishaIqamah,
     },
   ];
 };

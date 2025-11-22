@@ -21,7 +21,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Calculator, Upload } from "lucide-react";
+import { Calculator, Upload, Clock } from "lucide-react";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { formatDate, formatTime } from "@/lib/utils";
 
@@ -42,6 +42,12 @@ export default function PrayerTimesPage() {
           <p className="text-muted-foreground">Manage prayer times for all masjids</p>
         </div>
         <div className="flex gap-2">
+          <Link href="/dashboard/prayer-times/iqamah">
+            <Button variant="default" className="bg-green-600 hover:bg-green-700">
+              <Clock className="mr-2 h-4 w-4" />
+              Set Iqamah Times
+            </Button>
+          </Link>
           <Link href="/dashboard/prayer-times/calculate">
             <Button>
               <Calculator className="mr-2 h-4 w-4" />

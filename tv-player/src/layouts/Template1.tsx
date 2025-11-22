@@ -46,20 +46,24 @@ export const Template1 = ({ prayerTimes, masjidName, masjidLogo }: Template1Prop
             <table className="w-full">
               <thead>
                 <tr className="border-b-2 border-gray-200">
-                  <th className="text-left py-6 px-8 text-3xl font-semibold text-gray-700">
+                  <th className="text-left py-6 px-6 text-2xl font-semibold text-gray-700">
                     Prayer
                   </th>
-                  <th className="text-left py-6 px-8 text-3xl font-semibold text-gray-700">
-                    Arabic
+                  <th className="text-left py-6 px-6 text-2xl font-semibold text-gray-700">
+                    الصلاة
                   </th>
-                  <th className="text-right py-6 px-8 text-3xl font-semibold text-gray-700">
-                    Time
+                  <th className="text-center py-6 px-6 text-2xl font-semibold text-gray-700">
+                    Adhan
+                  </th>
+                  <th className="text-center py-6 px-6 text-2xl font-semibold text-islamic-darkGreen">
+                    Iqamah
                   </th>
                 </tr>
               </thead>
               <tbody>
                 {prayers.map((prayer, index) => {
                   const isCurrent = currentPrayer?.name === prayer.name;
+                  const showIqamah = prayer.name !== 'Sunrise'; // No iqamah for sunrise
 
                   return (
                     <tr
@@ -70,13 +74,13 @@ export const Template1 = ({ prayerTimes, masjidName, masjidLogo }: Template1Prop
                           : 'hover:bg-gray-50'
                       }`}
                     >
-                      <td className="py-8 px-8">
+                      <td className="py-6 px-6">
                         <div className="flex items-center">
                           {isCurrent && (
-                            <div className="w-3 h-3 bg-islamic-gold rounded-full mr-4 animate-pulse" />
+                            <div className="w-3 h-3 bg-islamic-gold rounded-full mr-3 animate-pulse" />
                           )}
                           <span
-                            className={`text-4xl font-semibold ${
+                            className={`text-3xl font-semibold ${
                               isCurrent ? 'text-islamic-darkGreen' : 'text-gray-800'
                             }`}
                           >
@@ -84,23 +88,34 @@ export const Template1 = ({ prayerTimes, masjidName, masjidLogo }: Template1Prop
                           </span>
                         </div>
                       </td>
-                      <td className="py-8 px-8">
+                      <td className="py-6 px-6">
                         <span
-                          className={`text-3xl font-arabic ${
+                          className={`text-2xl font-arabic ${
                             isCurrent ? 'text-islamic-darkGreen' : 'text-gray-600'
                           }`}
                         >
                           {prayer.arabicName}
                         </span>
                       </td>
-                      <td className="py-8 px-8 text-right">
+                      <td className="py-6 px-6 text-center">
                         <span
-                          className={`text-5xl font-bold font-mono ${
+                          className={`text-4xl font-bold font-mono ${
                             isCurrent ? 'text-islamic-gold' : 'text-gray-800'
                           }`}
                         >
                           {formatTime(prayer.time)}
                         </span>
+                      </td>
+                      <td className="py-6 px-6 text-center">
+                        {showIqamah && (
+                          <span
+                            className={`text-4xl font-bold font-mono ${
+                              isCurrent ? 'text-islamic-darkGreen' : 'text-islamic-darkGreen/80'
+                            }`}
+                          >
+                            {prayer.iqamah ? formatTime(prayer.iqamah) : '--:--'}
+                          </span>
+                        )}
                       </td>
                     </tr>
                   );

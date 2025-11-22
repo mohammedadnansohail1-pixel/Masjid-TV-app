@@ -100,6 +100,14 @@ export class MasjidsController {
         asr: '15:30',
         maghrib: '18:00',
         isha: '19:30',
+        // Default iqamah times (not set)
+        fajrIqamah: null,
+        dhuhrIqamah: null,
+        asrIqamah: null,
+        maghribIqamah: null,
+        ishaIqamah: null,
+        jumuah1: null,
+        jumuah2: null,
         message: 'Default prayer times - no data configured for today',
       };
     }
@@ -114,6 +122,15 @@ export class MasjidsController {
       asr: prayerTime.asr,
       maghrib: prayerTime.maghrib,
       isha: prayerTime.isha,
+      // Iqamah times
+      fajrIqamah: prayerTime.fajrIqamah,
+      dhuhrIqamah: prayerTime.dhuhrIqamah,
+      asrIqamah: prayerTime.asrIqamah,
+      maghribIqamah: prayerTime.maghribIqamah,
+      ishaIqamah: prayerTime.ishaIqamah,
+      // Jummah times
+      jumuah1: prayerTime.jumuah1,
+      jumuah2: prayerTime.jumuah2,
     };
   }
 
@@ -200,6 +217,15 @@ export class MasjidsController {
         maghrib: prayerTime.maghrib,
         isha: prayerTime.isha,
         date: prayerTime.date,
+        // Iqamah times
+        fajrIqamah: prayerTime.fajrIqamah,
+        dhuhrIqamah: prayerTime.dhuhrIqamah,
+        asrIqamah: prayerTime.asrIqamah,
+        maghribIqamah: prayerTime.maghribIqamah,
+        ishaIqamah: prayerTime.ishaIqamah,
+        // Jummah times
+        jumuah1: prayerTime.jumuah1,
+        jumuah2: prayerTime.jumuah2,
       } : {
         fajr: '05:00',
         sunrise: '06:30',
@@ -207,6 +233,13 @@ export class MasjidsController {
         asr: '15:30',
         maghrib: '18:00',
         isha: '19:30',
+        fajrIqamah: null,
+        dhuhrIqamah: null,
+        asrIqamah: null,
+        maghribIqamah: null,
+        ishaIqamah: null,
+        jumuah1: null,
+        jumuah2: null,
       },
       announcements: activeAnnouncements.map(a => ({
         id: a.id,
