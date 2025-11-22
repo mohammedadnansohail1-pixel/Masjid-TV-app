@@ -149,4 +149,19 @@ export class PrayerTimesController {
   ) {
     return this.prayerTimesService.remove(masjidId, date, user);
   }
+
+  @Put('masjid/:masjidId/bulk-iqamah')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.SUPER_ADMIN, UserRole.MASJID_ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Bulk update Iqamah times for all future dates' })
+  @ApiResponse({ status: 200, description: 'Iqamah times updated for all future dates' })
+  @ApiResponse({ status: 403, description: 'Forbidden' })
+  async bulkUpdateIqamah(
+    @Param('masjidId') masjidId: string,
+    @Body() updateDto: UpdatePrayerTimeDto,
+    @CurrentUser() user: any,
+  ) {
+    return this.prayerTimesService.bulkUpdateIqamah(masjidId, updateDto, user);
+  }
 }

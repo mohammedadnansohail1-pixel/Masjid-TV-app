@@ -52,8 +52,11 @@ export const Template1 = ({ prayerTimes, masjidName, masjidLogo }: Template1Prop
                   <th className="text-left py-6 px-8 text-3xl font-semibold text-gray-700">
                     Arabic
                   </th>
-                  <th className="text-right py-6 px-8 text-3xl font-semibold text-gray-700">
-                    Time
+                  <th className="text-center py-6 px-8 text-3xl font-semibold text-gray-700">
+                    Adhan
+                  </th>
+                  <th className="text-right py-6 px-8 text-3xl font-semibold text-islamic-gold">
+                    Iqamah
                   </th>
                 </tr>
               </thead>
@@ -93,14 +96,27 @@ export const Template1 = ({ prayerTimes, masjidName, masjidLogo }: Template1Prop
                           {prayer.arabicName}
                         </span>
                       </td>
-                      <td className="py-8 px-8 text-right">
+                      <td className="py-8 px-8 text-center">
                         <span
                           className={`text-5xl font-bold font-mono ${
-                            isCurrent ? 'text-islamic-gold' : 'text-gray-800'
+                            isCurrent ? 'text-islamic-darkGreen' : 'text-gray-800'
                           }`}
                         >
                           {formatTime(prayer.time)}
                         </span>
+                      </td>
+                      <td className="py-8 px-8 text-right">
+                        {prayer.iqamahTime ? (
+                          <span
+                            className={`text-5xl font-bold font-mono ${
+                              isCurrent ? 'text-islamic-gold' : 'text-islamic-gold/80'
+                            }`}
+                          >
+                            {formatTime(prayer.iqamahTime)}
+                          </span>
+                        ) : (
+                          <span className="text-3xl text-gray-400">-</span>
+                        )}
                       </td>
                     </tr>
                   );

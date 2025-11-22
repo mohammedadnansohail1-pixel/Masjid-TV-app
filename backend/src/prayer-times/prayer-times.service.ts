@@ -257,14 +257,32 @@ export class PrayerTimesService {
   }
 
   /**
-   * Calculate and save prayer times for a month using Aladhan API
+   * Calculate and save prayer times for a date range using Aladhan API
+   * Maximum range: 1 year + 1 day (366 days)
    */
   async calculateMonthlyPrayerTimes(calculateDto: CalculatePrayerTimesDto, user: any) {
-    const { masjidId, year, month, overwrite } = calculateDto;
+    const { masjidId, startDate, endDate, overwrite } = calculateDto;
 
     // Check authorization
     if (user.role !== UserRole.SUPER_ADMIN && user.masjidId !== masjidId) {
       throw new ForbiddenException('You do not have access to this masjid');
+    }
+
+    // Parse dates
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    start.setHours(0, 0, 0, 0);
+    end.setHours(0, 0, 0, 0);
+
+    // Validate date range
+    if (end < start) {
+      throw new BadRequestException('End date must be after start date');
+    }
+
+    // Check maximum range (1 year + 1 day = 366 days)
+    const daysDiff = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+    if (daysDiff > 366) {
+      throw new BadRequestException('Date range cannot exceed 1 year + 1 day (366 days)');
     }
 
     // Get masjid with location data
@@ -282,23 +300,46 @@ export class PrayerTimesService {
       );
     }
 
-    // Fetch prayer times from Aladhan API
-    const monthlyTimes = await this.aladhanApi.getPrayerTimesForMonth(
-      year,
-      month,
-      masjid.latitude,
-      masjid.longitude,
-      masjid.calculationMethod,
-      masjid.asrCalculation,
-      masjid.highLatitudeRule,
-    );
+    // Get all months in the range
+    const months: { year: number; month: number }[] = [];
+    const current = new Date(start);
+    while (current <= end) {
+      const year = current.getFullYear();
+      const month = current.getMonth() + 1;
+      if (!months.some(m => m.year === year && m.month === month)) {
+        months.push({ year, month });
+      }
+      current.setMonth(current.getMonth() + 1);
+    }
+
+    // Fetch prayer times from Aladhan API for each month
+    const allTimes: any[] = [];
+    for (const { year, month } of months) {
+      const monthlyTimes = await this.aladhanApi.getPrayerTimesForMonth(
+        year,
+        month,
+        masjid.latitude,
+        masjid.longitude,
+        masjid.calculationMethod,
+        masjid.asrCalculation,
+        masjid.highLatitudeRule,
+      );
+      allTimes.push(...monthlyTimes);
+    }
+
+    // Filter to only include dates within the specified range
+    const filteredTimes = allTimes.filter(dayTime => {
+      const date = new Date(dayTime.date);
+      date.setHours(0, 0, 0, 0);
+      return date >= start && date <= end;
+    });
 
     // Prepare prayer times for bulk insert
     const created: any[] = [];
     const skipped: any[] = [];
     const updated: any[] = [];
 
-    for (const dayTime of monthlyTimes) {
+    for (const dayTime of filteredTimes) {
       const date = new Date(dayTime.date);
 
       // Check if already exists
@@ -313,7 +354,7 @@ export class PrayerTimesService {
 
       if (existing) {
         if (overwrite) {
-          // Update existing
+          // Update existing (preserve Iqamah times)
           const updatedTime = await this.prisma.prayerTime.update({
             where: {
               masjidId_date: {
@@ -362,13 +403,60 @@ export class PrayerTimesService {
         skipped: skipped.length,
       },
       meta: {
-        year,
-        month,
-        totalDays: monthlyTimes.length,
+        startDate,
+        endDate,
+        totalDays: filteredTimes.length,
         createdRecords: created,
         updatedRecords: updated,
         skippedRecords: skipped,
       },
+    };
+  }
+
+  /**
+   * Bulk update Iqamah times for all future dates (from today onwards)
+   */
+  async bulkUpdateIqamah(masjidId: string, updateDto: UpdatePrayerTimeDto, user: any) {
+    // Check authorization
+    if (user.role !== UserRole.SUPER_ADMIN && user.masjidId !== masjidId) {
+      throw new ForbiddenException('You do not have access to this masjid');
+    }
+
+    // Get today's date at midnight
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    // Build update data - only include Iqamah fields that are provided
+    const updateData: any = {};
+    if (updateDto.fajrIqamah !== undefined) updateData.fajrIqamah = updateDto.fajrIqamah;
+    if (updateDto.dhuhrIqamah !== undefined) updateData.dhuhrIqamah = updateDto.dhuhrIqamah;
+    if (updateDto.asrIqamah !== undefined) updateData.asrIqamah = updateDto.asrIqamah;
+    if (updateDto.maghribIqamah !== undefined) updateData.maghribIqamah = updateDto.maghribIqamah;
+    if (updateDto.ishaIqamah !== undefined) updateData.ishaIqamah = updateDto.ishaIqamah;
+    if (updateDto.jumuah1 !== undefined) updateData.jumuah1 = updateDto.jumuah1;
+    if (updateDto.jumuah2 !== undefined) updateData.jumuah2 = updateDto.jumuah2;
+
+    if (Object.keys(updateData).length === 0) {
+      throw new BadRequestException('No Iqamah times provided to update');
+    }
+
+    // Update all prayer times from today onwards
+    const result = await this.prisma.prayerTime.updateMany({
+      where: {
+        masjidId,
+        date: {
+          gte: today,
+        },
+      },
+      data: updateData,
+    });
+
+    return {
+      success: true,
+      data: {
+        updatedCount: result.count,
+      },
+      message: `Successfully updated Iqamah times for ${result.count} dates`,
     };
   }
 
