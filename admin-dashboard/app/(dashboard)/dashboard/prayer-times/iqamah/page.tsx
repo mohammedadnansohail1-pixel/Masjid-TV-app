@@ -160,7 +160,7 @@ export default function IqamahTimesPage() {
         <div>
           <h1 className="text-3xl font-bold">Iqamah Times</h1>
           <p className="text-muted-foreground">
-            Set iqamah times for your masjid's daily prayers
+            Set iqamah times for your masjid&apos;s daily prayers
           </p>
         </div>
       </div>
@@ -189,7 +189,7 @@ export default function IqamahTimesPage() {
                 </SelectTrigger>
                 <SelectContent>
                   {masjids?.map((masjid) => (
-                    <SelectItem key={masjid.id} value={masjid.id}>
+                    <SelectItem key={masjid.id} value={String(masjid.id)}>
                       {masjid.name}
                     </SelectItem>
                   ))}
@@ -320,7 +320,7 @@ export default function IqamahTimesPage() {
             <Clock className="h-12 w-12 text-muted-foreground mb-4" />
             <h3 className="text-lg font-semibold mb-2">No Prayer Times Found</h3>
             <p className="text-muted-foreground mb-4">
-              Prayer times haven't been set for this date yet.
+              Prayer times have not been set for this date yet.
             </p>
             <Button variant="outline" onClick={() => window.location.href = '/dashboard/prayer-times/calculate'}>
               Calculate Prayer Times
