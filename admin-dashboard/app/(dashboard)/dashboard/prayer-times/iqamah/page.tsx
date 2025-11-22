@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useMasjids } from "@/hooks/useMasjids";
 import { useToast } from "@/hooks/use-toast";
 import apiClient from "@/lib/api-client";
@@ -74,14 +74,7 @@ export default function IqamahTimesPage() {
   const { data: masjids } = useMasjids();
   const { toast } = useToast();
 
-  // Load prayer times when masjid or date changes
-  useEffect(() => {
-    if (selectedMasjid && selectedDate) {
-      loadPrayerTimes();
-    }
-  }, [selectedMasjid, selectedDate]);
-
-  const loadPrayerTimes = async () => {
+  const loadPrayerTimes = useCallback(async () => {
     if (!selectedMasjid || !selectedDate) return;
 
     setIsLoading(true);
@@ -118,7 +111,14 @@ export default function IqamahTimesPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [selectedMasjid, selectedDate, toast]);
+
+  // Load prayer times when masjid or date changes
+  useEffect(() => {
+    if (selectedMasjid && selectedDate) {
+      loadPrayerTimes();
+    }
+  }, [selectedMasjid, selectedDate, loadPrayerTimes]);
 
   const handleSave = async () => {
     if (!selectedMasjid || !selectedDate || !prayerData) return;
