@@ -50,26 +50,31 @@ export const Template3 = ({ prayerTimes, masjidName, masjidLogo }: Template3Prop
           {/* Right Column - All Prayer Times */}
           <div className="flex flex-col justify-center">
             <div className="bg-white/5 backdrop-blur rounded-3xl p-8 border border-white/10">
-              <h2 className="text-4xl font-bold text-white mb-8 text-center border-b border-white/20 pb-6">
-                All Prayer Times
-              </h2>
+              {/* Table Header */}
+              <div className="grid grid-cols-4 gap-4 pb-4 mb-4 border-b border-white/20">
+                <div className="text-2xl font-bold text-white">Prayer</div>
+                <div className="text-2xl font-bold text-white text-center">Arabic</div>
+                <div className="text-2xl font-bold text-white text-center">Adhan</div>
+                <div className="text-2xl font-bold text-islamic-gold text-right">Iqamah</div>
+              </div>
 
-              <div className="space-y-6">
+              <div className="space-y-4">
                 {prayers.map((prayer, index) => (
                   <div
                     key={index}
-                    className="flex items-center justify-between p-6 bg-white/5 rounded-xl hover:bg-white/10 transition-all"
+                    className="grid grid-cols-4 gap-4 items-center p-4 bg-white/5 rounded-xl hover:bg-white/10 transition-all"
                   >
-                    <div>
-                      <div className="text-3xl font-semibold text-white mb-1">
-                        {prayer.name}
-                      </div>
-                      <div className="text-xl text-white/70 font-arabic">
-                        {prayer.arabicName}
-                      </div>
+                    <div className="text-2xl font-semibold text-white">
+                      {prayer.name}
                     </div>
-                    <div className="text-4xl font-bold font-mono text-islamic-gold">
+                    <div className="text-xl text-white/70 font-arabic text-center">
+                      {prayer.arabicName}
+                    </div>
+                    <div className="text-3xl font-bold font-mono text-white text-center">
                       {formatTime(prayer.time)}
+                    </div>
+                    <div className="text-3xl font-bold font-mono text-islamic-gold text-right">
+                      {prayer.iqamahTime ? formatTime(prayer.iqamahTime) : '-'}
                     </div>
                   </div>
                 ))}

@@ -26,6 +26,16 @@ export interface PrayerTime {
   asr: string;
   maghrib: string;
   isha: string;
+  // Iqamah times (manually set)
+  fajrIqamah?: string;
+  dhuhrIqamah?: string;
+  asrIqamah?: string;
+  maghribIqamah?: string;
+  ishaIqamah?: string;
+  // Jumuah times
+  jumuah1?: string;
+  jumuah2?: string;
+  isManual?: boolean;
   createdAt: string;
   updatedAt: string;
 }

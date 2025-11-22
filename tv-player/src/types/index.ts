@@ -1,6 +1,7 @@
 export interface PrayerTime {
   name: string;
   time: string;
+  iqamahTime?: string;
   arabicName?: string;
 }
 
@@ -11,6 +12,15 @@ export interface PrayerTimes {
   asr: string;
   maghrib: string;
   isha: string;
+  // Iqamah times (manually set by masjid)
+  fajrIqamah?: string;
+  dhuhrIqamah?: string;
+  asrIqamah?: string;
+  maghribIqamah?: string;
+  ishaIqamah?: string;
+  // Jumuah times
+  jumuah1?: string;
+  jumuah2?: string;
   date?: string;
   hijriDate?: string;
 }

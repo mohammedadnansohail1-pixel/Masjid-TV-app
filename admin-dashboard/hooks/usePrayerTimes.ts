@@ -48,15 +48,17 @@ export function useUpdatePrayerTime() {
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: async ({ id, data }: { id: number; data: Partial<PrayerTime> }) => {
-      const response = await apiClient.put<PrayerTime>(`/prayer-times/${id}`, data);
+    mutationFn: async ({ masjidId, date, data }: { masjidId: string; date: string; data: Partial<PrayerTime> }) => {
+      // Format date to YYYY-MM-DD if it's not already
+      const formattedDate = date.split('T')[0];
+      const response = await apiClient.put<PrayerTime>(`/prayer-times/masjid/${masjidId}/date/${formattedDate}`, data);
       return response.data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["prayer-times"] });
       toast({
         title: "Success",
-        description: "Prayer time updated successfully",
+        description: "Iqamah times updated successfully",
       });
     },
     onError: (error: any) => {
