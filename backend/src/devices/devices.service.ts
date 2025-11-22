@@ -73,6 +73,27 @@ export class DevicesService {
   }
 
   /**
+   * Find all devices for the current user (filtered by role)
+   * SUPER_ADMIN: sees all devices
+   * MASJID_ADMIN: sees only their masjid's devices
+   */
+  async findAllForUser(user: any) {
+    const whereClause = user.role === UserRole.SUPER_ADMIN
+      ? {}
+      : { masjidId: user.masjidId };
+
+    const devices = await this.prisma.device.findMany({
+      where: whereClause,
+      include: {
+        masjid: true,
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    return devices;
+  }
+
+  /**
    * Find all devices for a masjid
    */
   async findAll(masjidId: string, user: any) {
@@ -115,10 +136,7 @@ export class DevicesService {
       throw new ForbiddenException('You do not have access to this device');
     }
 
-    return {
-      success: true,
-      data: device,
-    };
+    return device;
   }
 
   /**
@@ -141,12 +159,12 @@ export class DevicesService {
     const updated = await this.prisma.device.update({
       where: { id },
       data: updateDto,
+      include: {
+        masjid: true,
+      },
     });
 
-    return {
-      success: true,
-      data: updated,
-    };
+    return updated;
   }
 
   /**
