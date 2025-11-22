@@ -1,4 +1,4 @@
-import { useEffect, useCallback, useState } from 'react';
+import { useEffect, useCallback, useState, useRef } from 'react';
 import { wsService } from '../services/websocket';
 import type { WebSocketMessage } from '../types';
 
@@ -8,11 +8,18 @@ export const useWebSocket = (
   onMessage?: (message: WebSocketMessage) => void
 ) => {
   const [isConnected, setIsConnected] = useState(false);
+  const onMessageRef = useRef(onMessage);
 
+  // Keep ref updated with latest callback
+  useEffect(() => {
+    onMessageRef.current = onMessage;
+  }, [onMessage]);
+
+  // Initial connection setup - only reconnect when deviceId changes
   useEffect(() => {
     if (!deviceId) return;
 
-    // Connect to WebSocket
+    // Connect to WebSocket (handles initial masjidId if available)
     wsService.connect(deviceId, masjidId || undefined);
 
     // Listen for connection status
@@ -24,20 +31,26 @@ export const useWebSocket = (
       setIsConnected(false);
     });
 
-    // Listen for all messages if handler provided
-    let unsubscribeMessages: (() => void) | undefined;
-    if (onMessage) {
-      unsubscribeMessages = wsService.on('*', onMessage);
-    }
+    // Listen for all messages using ref to avoid re-subscriptions
+    const messageHandler = (message: WebSocketMessage) => {
+      onMessageRef.current?.(message);
+    };
+    const unsubscribeMessages = wsService.on('*', messageHandler);
 
     return () => {
       unsubscribeConnected();
       unsubscribeDisconnected();
-      if (unsubscribeMessages) {
-        unsubscribeMessages();
-      }
+      unsubscribeMessages();
     };
-  }, [deviceId, masjidId, onMessage]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [deviceId]); // masjidId changes handled separately below
+
+  // Update masjid registration when masjidId changes (without reconnecting)
+  useEffect(() => {
+    if (masjidId && wsService.isConnected()) {
+      wsService.updateMasjidId(masjidId);
+    }
+  }, [masjidId]);
 
   const subscribe = useCallback((event: string, handler: (message: WebSocketMessage) => void) => {
     return wsService.on(event, handler);

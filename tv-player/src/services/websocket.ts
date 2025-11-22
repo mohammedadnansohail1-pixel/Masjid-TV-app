@@ -14,14 +14,20 @@ class WebSocketService {
 
   connect(deviceId: string, masjidId?: string) {
     const wsUrl = import.meta.env.VITE_WS_URL || import.meta.env.VITE_API_URL || 'http://localhost:3000';
+    const newMasjidId = masjidId || null;
 
+    // If already connected, check if we need to re-register with a new masjidId
     if (this.socket?.connected) {
-      console.log('WebSocket already connected');
+      if (newMasjidId && newMasjidId !== this.masjidId) {
+        console.log('MasjidId changed, re-registering with masjid:', newMasjidId);
+        this.masjidId = newMasjidId;
+        this.registerWithMasjid();
+      }
       return;
     }
 
     this.deviceId = deviceId;
-    this.masjidId = masjidId || null;
+    this.masjidId = newMasjidId;
 
     this.socket = io(wsUrl, {
       auth: {
@@ -38,6 +44,16 @@ class WebSocketService {
     this.setupEventHandlers();
   }
 
+  private registerWithMasjid() {
+    if (this.socket?.connected && this.masjidId) {
+      this.socket.emit('device:register', {
+        masjidId: this.masjidId,
+        deviceId: this.deviceId,
+      });
+      console.log('Device registered with masjid:', this.masjidId);
+    }
+  }
+
   private setupEventHandlers() {
     if (!this.socket) return;
 
@@ -46,13 +62,7 @@ class WebSocketService {
       this.reconnectAttempts = 0;
 
       // Register device with masjid room to receive broadcasts
-      if (this.masjidId) {
-        this.socket?.emit('device:register', {
-          masjidId: this.masjidId,
-          deviceId: this.deviceId,
-        });
-        console.log('Device registered with masjid:', this.masjidId);
-      }
+      this.registerWithMasjid();
 
       this.notifyHandlers('connected', { type: 'connected' });
     });
@@ -194,6 +204,18 @@ class WebSocketService {
 
   isConnected(): boolean {
     return this.socket?.connected || false;
+  }
+
+  updateMasjidId(masjidId: string) {
+    if (masjidId !== this.masjidId) {
+      console.log('Updating masjidId to:', masjidId);
+      this.masjidId = masjidId;
+      this.registerWithMasjid();
+    }
+  }
+
+  getMasjidId(): string | null {
+    return this.masjidId;
   }
 }
 
