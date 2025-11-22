@@ -11,24 +11,51 @@ export const useDeviceRegistration = () => {
   // Load device from localStorage
   useEffect(() => {
     const loadDevice = async () => {
-      try {
-        const savedDeviceId = localStorage.getItem('device_id');
-        const savedMasjidId = localStorage.getItem('masjid_id');
+      const savedDeviceId = localStorage.getItem('device_id');
+      const savedMasjidId = localStorage.getItem('masjid_id');
 
+      // If we have masjid_id in localStorage, device is already paired
+      // Even if API call fails, trust the localStorage state
+      if (savedMasjidId && savedDeviceId) {
+        setIsPaired(true);
+        setDevice({
+          id: savedDeviceId,
+          pairingCode: localStorage.getItem('pairing_code') || '',
+          isPaired: true,
+          name: 'TV Display',
+        } as Device);
+
+        // Try to refresh device info from API, but don't fail if it doesn't work
+        try {
+          const deviceInfo = await apiService.getDeviceInfo(savedDeviceId);
+          setDevice(deviceInfo);
+          // Sync localStorage with actual device state
+          if (deviceInfo.masjid?.id) {
+            localStorage.setItem('masjid_id', deviceInfo.masjid.id);
+            if (deviceInfo.masjid.name) {
+              localStorage.setItem('masjid_name', deviceInfo.masjid.name);
+            }
+          }
+        } catch (err) {
+          console.warn('Could not refresh device info from API:', err);
+          // Keep using localStorage values - device is still paired
+        }
+        setIsLoading(false);
+        return;
+      }
+
+      try {
         if (savedDeviceId) {
           // Device was previously registered, check its status
           const deviceInfo = await apiService.getDeviceInfo(savedDeviceId);
           setDevice(deviceInfo);
 
-          // Check if device is paired (either from localStorage or from API response)
-          if (savedMasjidId || (deviceInfo.isPaired && deviceInfo.masjid?.id)) {
+          // Check if device is paired from API response
+          if (deviceInfo.isPaired && deviceInfo.masjid?.id) {
             setIsPaired(true);
-            // Sync localStorage with actual device state
-            if (deviceInfo.masjid?.id) {
-              localStorage.setItem('masjid_id', deviceInfo.masjid.id);
-              if (deviceInfo.masjid.name) {
-                localStorage.setItem('masjid_name', deviceInfo.masjid.name);
-              }
+            localStorage.setItem('masjid_id', deviceInfo.masjid.id);
+            if (deviceInfo.masjid.name) {
+              localStorage.setItem('masjid_name', deviceInfo.masjid.name);
             }
           } else {
             setIsPaired(false);
@@ -39,8 +66,10 @@ export const useDeviceRegistration = () => {
         }
       } catch (err) {
         console.error('Error loading device:', err);
-        // If there's an error, try registering a new device
-        await registerNewDevice();
+        // Only register new device if we don't have a masjid_id
+        if (!savedMasjidId) {
+          await registerNewDevice();
+        }
       } finally {
         setIsLoading(false);
       }
