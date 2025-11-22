@@ -8,7 +8,6 @@ import { useMasjids } from "@/hooks/useMasjids";
 import { useCalculatePrayerTimes } from "@/hooks/usePrayerTimes";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select,
   SelectContent,
@@ -187,10 +186,12 @@ export default function CalculatePrayerTimesPage() {
               )}
 
               <div className="flex items-center space-x-2">
-                <Checkbox
+                <input
+                  type="checkbox"
                   id="overwrite"
+                  className="h-4 w-4 rounded border-gray-300"
                   checked={watch("overwrite")}
-                  onCheckedChange={(checked) => setValue("overwrite", checked as boolean)}
+                  onChange={(e) => setValue("overwrite", e.target.checked)}
                 />
                 <Label htmlFor="overwrite" className="text-sm font-normal">
                   Overwrite existing Adhan times (Iqamah times will be preserved)
