@@ -373,6 +373,53 @@ export class PrayerTimesService {
   }
 
   /**
+   * Bulk update Iqamah times for all future dates (from today onwards)
+   */
+  async bulkUpdateIqamah(masjidId: string, updateDto: UpdatePrayerTimeDto, user: any) {
+    // Check authorization
+    if (user.role !== UserRole.SUPER_ADMIN && user.masjidId !== masjidId) {
+      throw new ForbiddenException('You do not have access to this masjid');
+    }
+
+    // Get today's date at midnight
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    // Build update data - only include Iqamah fields that are provided
+    const updateData: any = {};
+    if (updateDto.fajrIqamah !== undefined) updateData.fajrIqamah = updateDto.fajrIqamah;
+    if (updateDto.dhuhrIqamah !== undefined) updateData.dhuhrIqamah = updateDto.dhuhrIqamah;
+    if (updateDto.asrIqamah !== undefined) updateData.asrIqamah = updateDto.asrIqamah;
+    if (updateDto.maghribIqamah !== undefined) updateData.maghribIqamah = updateDto.maghribIqamah;
+    if (updateDto.ishaIqamah !== undefined) updateData.ishaIqamah = updateDto.ishaIqamah;
+    if (updateDto.jumuah1 !== undefined) updateData.jumuah1 = updateDto.jumuah1;
+    if (updateDto.jumuah2 !== undefined) updateData.jumuah2 = updateDto.jumuah2;
+
+    if (Object.keys(updateData).length === 0) {
+      throw new BadRequestException('No Iqamah times provided to update');
+    }
+
+    // Update all prayer times from today onwards
+    const result = await this.prisma.prayerTime.updateMany({
+      where: {
+        masjidId,
+        date: {
+          gte: today,
+        },
+      },
+      data: updateData,
+    });
+
+    return {
+      success: true,
+      data: {
+        updatedCount: result.count,
+      },
+      message: `Successfully updated Iqamah times for ${result.count} dates`,
+    };
+  }
+
+  /**
    * Bulk upload prayer times (for CSV import, etc.)
    */
   async bulkUpload(prayerTimes: CreatePrayerTimeDto[], user: any) {

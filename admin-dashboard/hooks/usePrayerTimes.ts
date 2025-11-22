@@ -83,6 +83,32 @@ export function useUpdatePrayerTime() {
   });
 }
 
+export function useBulkUpdateIqamah() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async ({ masjidId, data }: { masjidId: string; data: Partial<PrayerTime> }) => {
+      const response = await apiClient.put(`/prayer-times/masjid/${masjidId}/bulk-iqamah`, data);
+      return response.data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["prayer-times"] });
+      toast({
+        title: "Success",
+        description: data.message || "Iqamah times updated for all future dates",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error.response?.data?.message || "Failed to update Iqamah times",
+      });
+    },
+  });
+}
+
 export function useCalculatePrayerTimes() {
   const queryClient = useQueryClient();
   const { toast } = useToast();

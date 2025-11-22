@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { usePrayerTimes, useUpdatePrayerTime } from "@/hooks/usePrayerTimes";
+import { usePrayerTimes, useUpdatePrayerTime, useBulkUpdateIqamah } from "@/hooks/usePrayerTimes";
 import { useMasjids } from "@/hooks/useMasjids";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -31,7 +31,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Calculator, Upload, Edit, Clock } from "lucide-react";
+import { Calculator, Upload, Clock, Settings2 } from "lucide-react";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { formatDate, formatTime } from "@/lib/utils";
 import { PrayerTime } from "@/types";
@@ -42,7 +42,17 @@ export default function PrayerTimesPage() {
     new Date().toISOString().slice(0, 7)
   );
   const [editingPrayerTime, setEditingPrayerTime] = useState<PrayerTime | null>(null);
+  const [showBulkDialog, setShowBulkDialog] = useState(false);
   const [iqamahValues, setIqamahValues] = useState({
+    fajrIqamah: "",
+    dhuhrIqamah: "",
+    asrIqamah: "",
+    maghribIqamah: "",
+    ishaIqamah: "",
+    jumuah1: "",
+    jumuah2: "",
+  });
+  const [bulkIqamahValues, setBulkIqamahValues] = useState({
     fajrIqamah: "",
     dhuhrIqamah: "",
     asrIqamah: "",
@@ -55,6 +65,7 @@ export default function PrayerTimesPage() {
   const { data: masjids } = useMasjids();
   const { data: prayerTimes, isLoading } = usePrayerTimes(selectedMasjid, selectedMonth);
   const updatePrayerTime = useUpdatePrayerTime();
+  const bulkUpdateIqamah = useBulkUpdateIqamah();
 
   const openEditDialog = (pt: PrayerTime) => {
     setEditingPrayerTime(pt);
@@ -67,6 +78,23 @@ export default function PrayerTimesPage() {
       jumuah1: pt.jumuah1 || "",
       jumuah2: pt.jumuah2 || "",
     });
+  };
+
+  const openBulkDialog = () => {
+    // Pre-fill with current values from first prayer time if available
+    if (prayerTimes && prayerTimes.length > 0) {
+      const first = prayerTimes[0];
+      setBulkIqamahValues({
+        fajrIqamah: first.fajrIqamah || "",
+        dhuhrIqamah: first.dhuhrIqamah || "",
+        asrIqamah: first.asrIqamah || "",
+        maghribIqamah: first.maghribIqamah || "",
+        ishaIqamah: first.ishaIqamah || "",
+        jumuah1: first.jumuah1 || "",
+        jumuah2: first.jumuah2 || "",
+      });
+    }
+    setShowBulkDialog(true);
   };
 
   const handleSaveIqamah = async () => {
@@ -86,6 +114,24 @@ export default function PrayerTimesPage() {
       },
     });
     setEditingPrayerTime(null);
+  };
+
+  const handleBulkSaveIqamah = async () => {
+    if (!selectedMasjid) return;
+
+    await bulkUpdateIqamah.mutateAsync({
+      masjidId: selectedMasjid,
+      data: {
+        fajrIqamah: bulkIqamahValues.fajrIqamah || undefined,
+        dhuhrIqamah: bulkIqamahValues.dhuhrIqamah || undefined,
+        asrIqamah: bulkIqamahValues.asrIqamah || undefined,
+        maghribIqamah: bulkIqamahValues.maghribIqamah || undefined,
+        ishaIqamah: bulkIqamahValues.ishaIqamah || undefined,
+        jumuah1: bulkIqamahValues.jumuah1 || undefined,
+        jumuah2: bulkIqamahValues.jumuah2 || undefined,
+      },
+    });
+    setShowBulkDialog(false);
   };
 
   const isFriday = (dateString: string) => {
@@ -118,7 +164,15 @@ export default function PrayerTimesPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Filter Prayer Times</CardTitle>
+          <div className="flex justify-between items-start">
+            <CardTitle>Filter Prayer Times</CardTitle>
+            {selectedMasjid && (
+              <Button variant="secondary" onClick={openBulkDialog}>
+                <Settings2 className="mr-2 h-4 w-4" />
+                Set Default Iqamah Times
+              </Button>
+            )}
+          </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <label className="text-sm font-medium">Masjid</label>
@@ -129,10 +183,10 @@ export default function PrayerTimesPage() {
                 }
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="All Masjids" />
+                  <SelectValue placeholder="Select a Masjid" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Masjids</SelectItem>
+                  <SelectItem value="all">Select a Masjid</SelectItem>
                   {masjids?.map((masjid) => (
                     <SelectItem key={masjid.id} value={masjid.id}>
                       {masjid.name}
@@ -154,7 +208,11 @@ export default function PrayerTimesPage() {
           </div>
         </CardHeader>
         <CardContent>
-          {isLoading ? (
+          {!selectedMasjid ? (
+            <div className="flex justify-center items-center h-48 text-muted-foreground">
+              Please select a masjid to view prayer times
+            </div>
+          ) : isLoading ? (
             <div className="flex justify-center items-center h-48">
               <LoadingSpinner size="lg" />
             </div>
@@ -243,7 +301,7 @@ export default function PrayerTimesPage() {
         </CardContent>
       </Card>
 
-      {/* Edit Iqamah Dialog */}
+      {/* Edit Single Day Iqamah Dialog */}
       <Dialog open={editingPrayerTime !== null} onOpenChange={() => setEditingPrayerTime(null)}>
         <DialogContent className="max-w-md">
           <DialogHeader>
@@ -366,6 +424,131 @@ export default function PrayerTimesPage() {
             </Button>
             <Button onClick={handleSaveIqamah} disabled={updatePrayerTime.isPending}>
               {updatePrayerTime.isPending ? "Saving..." : "Save Iqamah Times"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Bulk Update Iqamah Dialog */}
+      <Dialog open={showBulkDialog} onOpenChange={setShowBulkDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Set Default Iqamah Times</DialogTitle>
+            <DialogDescription>
+              These Iqamah times will be applied to <strong>all dates from today onwards</strong>.
+              This saves you from setting times individually for each day.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-2 items-center gap-4">
+              <Label htmlFor="bulk-fajrIqamah" className="text-right">
+                Fajr Iqamah
+              </Label>
+              <Input
+                id="bulk-fajrIqamah"
+                type="time"
+                value={bulkIqamahValues.fajrIqamah}
+                onChange={(e) =>
+                  setBulkIqamahValues({ ...bulkIqamahValues, fajrIqamah: e.target.value })
+                }
+              />
+            </div>
+
+            <div className="grid grid-cols-2 items-center gap-4">
+              <Label htmlFor="bulk-dhuhrIqamah" className="text-right">
+                Dhuhr Iqamah
+              </Label>
+              <Input
+                id="bulk-dhuhrIqamah"
+                type="time"
+                value={bulkIqamahValues.dhuhrIqamah}
+                onChange={(e) =>
+                  setBulkIqamahValues({ ...bulkIqamahValues, dhuhrIqamah: e.target.value })
+                }
+              />
+            </div>
+
+            <div className="grid grid-cols-2 items-center gap-4">
+              <Label htmlFor="bulk-asrIqamah" className="text-right">
+                Asr Iqamah
+              </Label>
+              <Input
+                id="bulk-asrIqamah"
+                type="time"
+                value={bulkIqamahValues.asrIqamah}
+                onChange={(e) =>
+                  setBulkIqamahValues({ ...bulkIqamahValues, asrIqamah: e.target.value })
+                }
+              />
+            </div>
+
+            <div className="grid grid-cols-2 items-center gap-4">
+              <Label htmlFor="bulk-maghribIqamah" className="text-right">
+                Maghrib Iqamah
+              </Label>
+              <Input
+                id="bulk-maghribIqamah"
+                type="time"
+                value={bulkIqamahValues.maghribIqamah}
+                onChange={(e) =>
+                  setBulkIqamahValues({ ...bulkIqamahValues, maghribIqamah: e.target.value })
+                }
+              />
+            </div>
+
+            <div className="grid grid-cols-2 items-center gap-4">
+              <Label htmlFor="bulk-ishaIqamah" className="text-right">
+                Isha Iqamah
+              </Label>
+              <Input
+                id="bulk-ishaIqamah"
+                type="time"
+                value={bulkIqamahValues.ishaIqamah}
+                onChange={(e) =>
+                  setBulkIqamahValues({ ...bulkIqamahValues, ishaIqamah: e.target.value })
+                }
+              />
+            </div>
+
+            <div className="border-t pt-4 mt-2">
+              <p className="text-sm text-green-600 font-medium mb-3">Jumu&apos;ah Times (All Fridays)</p>
+            </div>
+            <div className="grid grid-cols-2 items-center gap-4">
+              <Label htmlFor="bulk-jumuah1" className="text-right">
+                First Jumu&apos;ah
+              </Label>
+              <Input
+                id="bulk-jumuah1"
+                type="time"
+                value={bulkIqamahValues.jumuah1}
+                onChange={(e) =>
+                  setBulkIqamahValues({ ...bulkIqamahValues, jumuah1: e.target.value })
+                }
+              />
+            </div>
+
+            <div className="grid grid-cols-2 items-center gap-4">
+              <Label htmlFor="bulk-jumuah2" className="text-right">
+                Second Jumu&apos;ah
+              </Label>
+              <Input
+                id="bulk-jumuah2"
+                type="time"
+                value={bulkIqamahValues.jumuah2}
+                onChange={(e) =>
+                  setBulkIqamahValues({ ...bulkIqamahValues, jumuah2: e.target.value })
+                }
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowBulkDialog(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleBulkSaveIqamah} disabled={bulkUpdateIqamah.isPending}>
+              {bulkUpdateIqamah.isPending ? "Updating..." : "Update All Future Dates"}
             </Button>
           </DialogFooter>
         </DialogContent>

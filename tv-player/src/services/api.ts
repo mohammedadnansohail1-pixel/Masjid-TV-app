@@ -86,8 +86,26 @@ class APIService {
 
   // Get prayer times
   async getPrayerTimes(masjidId: string): Promise<PrayerTimes> {
-    const response = await this.api.get<PrayerTimes>(`/masjids/${masjidId}/prayer-times/today`);
-    return response.data;
+    const response = await this.api.get(`/prayer-times/masjid/${masjidId}/today`);
+    // Handle nested response structure and map Iqamah fields
+    const data = response.data?.data || response.data;
+    return {
+      fajr: data.fajr,
+      sunrise: data.sunrise,
+      dhuhr: data.dhuhr,
+      asr: data.asr,
+      maghrib: data.maghrib,
+      isha: data.isha,
+      fajrIqamah: data.fajrIqamah,
+      dhuhrIqamah: data.dhuhrIqamah,
+      asrIqamah: data.asrIqamah,
+      maghribIqamah: data.maghribIqamah,
+      ishaIqamah: data.ishaIqamah,
+      jumuah1: data.jumuah1,
+      jumuah2: data.jumuah2,
+      date: data.date,
+      hijriDate: data.hijriDate,
+    };
   }
 
   // Get content schedule
