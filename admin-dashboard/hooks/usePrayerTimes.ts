@@ -74,7 +74,11 @@ export function useCalculatePrayerTimes() {
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: async (data: { masjidId: number; startDate: string; endDate: string }) => {
+    // mutationFn: async (data: { masjidId: number; startDate: string; endDate: string }) => {
+    //   const response = await apiClient.post("/prayer-times/calculate", data);
+    //   return response.data;
+    // },
+    mutationFn: async (data: { masjidId: string; year: number; month: number; overwrite?: boolean }) => {
       const response = await apiClient.post("/prayer-times/calculate", data);
       return response.data;
     },

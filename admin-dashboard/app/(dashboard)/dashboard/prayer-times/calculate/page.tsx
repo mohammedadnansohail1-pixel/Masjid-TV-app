@@ -20,7 +20,8 @@ import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 
 const calculateSchema = z.object({
-  masjidId: z.number({ required_error: "Masjid is required" }),
+  // masjidId: z.number({ required_error: "Masjid is required" }),
+  masjidId: z.string().min(1, "Masjid is required"),
   startDate: z.string().min(1, "Start date is required"),
   endDate: z.string().min(1, "End date is required"),
 });
@@ -32,19 +33,47 @@ export default function CalculatePrayerTimesPage() {
   const { data: masjids } = useMasjids();
   const calculatePrayerTimes = useCalculatePrayerTimes();
 
-  const {
+  // const {
+  //   setValue,
+  //   watch,
+  //   handleSubmit,
+  //   formState: { errors },
+  // } = useForm<CalculateFormData>({
+  //   resolver: zodResolver(calculateSchema),
+  // });
+  const { 
     setValue,
     watch,
     handleSubmit,
     formState: { errors },
   } = useForm<CalculateFormData>({
     resolver: zodResolver(calculateSchema),
+    defaultValues: {
+      masjidId: undefined,
+      startDate: "",
+      endDate: "",
+    },
   });
 
+  // const onSubmit = async (data: CalculateFormData) => {
+  //   await calculatePrayerTimes.mutateAsync(data);
+  //   router.push("/dashboard/prayer-times");
+  // };
+
   const onSubmit = async (data: CalculateFormData) => {
-    await calculatePrayerTimes.mutateAsync(data);
+    const start = new Date(data.startDate);
+
+    const payload = {
+      masjidId: data.masjidId,
+      year: start.getFullYear(),
+      month: start.getMonth() + 1,
+      overwrite: true
+    };
+
+    await calculatePrayerTimes.mutateAsync(payload);
     router.push("/dashboard/prayer-times");
   };
+
 
   return (
     <div className="space-y-6">
@@ -72,18 +101,31 @@ export default function CalculatePrayerTimesPage() {
               <div className="space-y-2">
                 <Label htmlFor="masjidId">Select Masjid *</Label>
                 <Select
-                  value={watch("masjidId")?.toString()}
-                  onValueChange={(value) => setValue("masjidId", parseInt(value))}
+                  // value={watch("masjidId")?.toString()}
+                  // onValueChange={(value) => setValue("masjidId", parseInt(value))}
+                  value={watch("masjidId") ?? ""}
+                  onValueChange={(value) => {
+                    console.log("CHOSEN VALUE =", value);
+                    setValue("masjidId", value)
+                  }}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Choose a masjid" />
                   </SelectTrigger>
-                  <SelectContent>
+                  {/* <SelectContent>
                     {masjids?.map((masjid) => (
                       <SelectItem key={masjid.id} value={masjid.id.toString()}>
                         {masjid.name}
                       </SelectItem>
                     ))}
+                  </SelectContent> */}
+                  <SelectContent>
+                    {Array.isArray(masjids) &&
+                      masjids.map((masjid) => (
+                        <SelectItem key={masjid.id} value={masjid.id.toString()}>
+                          {masjid.name}
+                        </SelectItem>
+                      ))}
                   </SelectContent>
                 </Select>
                 {errors.masjidId && (

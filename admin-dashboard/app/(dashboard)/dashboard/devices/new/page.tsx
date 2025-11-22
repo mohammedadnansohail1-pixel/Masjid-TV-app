@@ -42,8 +42,18 @@ export default function NewDevicePage() {
     resolver: zodResolver(deviceSchema),
   });
 
+  // const onSubmit = async (data: DeviceFormData) => {
+  //   await createDevice.mutateAsync(data);
+  //   router.push("/dashboard/devices");
+  // };
+
   const onSubmit = async (data: DeviceFormData) => {
-    await createDevice.mutateAsync(data);
+    const payload = {
+      name: data.name,
+      masjidId: data.masjidId, // already a string (CUID)
+    };
+
+    await createDevice.mutateAsync(payload);
     router.push("/dashboard/devices");
   };
 
@@ -89,12 +99,20 @@ export default function NewDevicePage() {
                   <SelectTrigger>
                     <SelectValue placeholder="Select a masjid" />
                   </SelectTrigger>
-                  <SelectContent>
+                  {/* <SelectContent>
                     {masjids?.map((masjid) => (
                       <SelectItem key={masjid.id} value={String(masjid.id)}>
                         {masjid.name}
                       </SelectItem>
                     ))}
+                  </SelectContent> */}
+                  <SelectContent>
+                    {Array.isArray(masjids) &&
+                      masjids.map((masjid) => (
+                        <SelectItem key={masjid.id} value={masjid.id.toString()}>
+                          {masjid.name}
+                        </SelectItem>
+                      ))}
                   </SelectContent>
                 </Select>
                 {errors.masjidId && (

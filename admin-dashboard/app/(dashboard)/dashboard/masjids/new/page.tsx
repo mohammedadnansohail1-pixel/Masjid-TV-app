@@ -21,13 +21,19 @@ import Link from "next/link";
 
 const masjidSchema = z.object({
   name: z.string().min(1, "Name is required"),
+  // Slug is required in backend
+  slug: z.string()
+    .min(3, "Slug must be at least 3 characters")
+    .regex(/^[a-z0-9-]+$/, "Slug must be lowercase, hyphens only"),
   address: z.string().min(1, "Address is required"),
   city: z.string().min(1, "City is required"),
   state: z.string().min(1, "State is required"),
   zipCode: z.string().min(1, "Zip code is required"),
   country: z.string().min(1, "Country is required"),
-  contactEmail: z.string().email("Invalid email").optional().or(z.literal("")),
-  contactPhone: z.string().optional(),
+  // contactEmail: z.string().email("Invalid email").optional().or(z.literal("")),
+  // contactPhone: z.string().optional(),
+  email: z.string().email("Invalid email").optional(),
+  phone: z.string().optional(),
   timezone: z.string().min(1, "Timezone is required"),
   calculationMethod: z.string().min(1, "Calculation method is required"),
 });
@@ -91,6 +97,18 @@ export default function NewMasjidPage() {
                 )}
               </div>
 
+              <div className="space-y-2">
+                <Label htmlFor="slug">Slug *</Label>
+                <Input
+                  id="slug"
+                  placeholder="masjid-al-example"
+                  {...register("slug")}
+                />
+                {errors.slug && (
+                  <p className="text-sm text-red-500">{errors.slug.message}</p>
+                )}
+              </div>
+
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="address">Address *</Label>
@@ -150,11 +168,11 @@ export default function NewMasjidPage() {
                     id="contactEmail"
                     type="email"
                     placeholder="info@masjid.com"
-                    {...register("contactEmail")}
+                    {...register("email")}
                   />
-                  {errors.contactEmail && (
+                  {errors.email && (
                     <p className="text-sm text-red-500">
-                      {errors.contactEmail.message}
+                      {errors.email.message}
                     </p>
                   )}
                 </div>
@@ -164,7 +182,7 @@ export default function NewMasjidPage() {
                   <Input
                     id="contactPhone"
                     placeholder="(555) 123-4567"
-                    {...register("contactPhone")}
+                    {...register("phone")}
                   />
                 </div>
               </div>

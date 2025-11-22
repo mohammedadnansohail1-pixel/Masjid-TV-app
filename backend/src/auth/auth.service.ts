@@ -59,12 +59,16 @@ export class AuthService {
     // Generate token
     const token = this.generateToken(user.id, user.email, user.role);
 
+    // return {
+    //   success: true,
+    //   data: {
+    //     user: this.sanitizeUser(user),
+    //     token,
+    //   },
+    // };
     return {
-      success: true,
-      data: {
-        user: this.sanitizeUser(user),
-        token,
-      },
+      token,
+      user: this.sanitizeUser(user),
     };
   }
 
@@ -97,12 +101,16 @@ export class AuthService {
     // Generate token
     const token = this.generateToken(user.id, user.email, user.role);
 
+    // return {
+    //   success: true,
+    //   data: {
+    //     user: this.sanitizeUser(user),
+    //     token,
+    //   },
+    // };
     return {
-      success: true,
-      data: {
-        user: this.sanitizeUser(user),
-        token,
-      },
+      token,
+      user: this.sanitizeUser(user),
     };
   }
 
