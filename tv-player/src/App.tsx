@@ -125,6 +125,30 @@ function App() {
     return () => clearTimeout(timer);
   }, [currentContent, currentContentIndex, contentRotation]);
 
+  // Preload next content's images for instant transitions
+  useEffect(() => {
+    if (contentRotation.length <= 1) return;
+
+    const nextIndex = (currentContentIndex + 1) % contentRotation.length;
+    const nextContent = contentRotation[nextIndex];
+
+    if (nextContent?.type === 'media' && nextContent.data) {
+      const mediaData = nextContent.data as any;
+      if (mediaData.url && (mediaData.type === 'image' || !mediaData.type)) {
+        const img = new Image();
+        img.src = mediaData.url;
+      }
+    }
+
+    if (nextContent?.type === 'announcement' && nextContent.data) {
+      const announcementData = nextContent.data as any;
+      if (announcementData.imageUrl) {
+        const img = new Image();
+        img.src = announcementData.imageUrl;
+      }
+    }
+  }, [currentContentIndex, contentRotation]);
+
   // Heartbeat to backend
   useEffect(() => {
     if (!device?.id || !isPaired) return;
@@ -257,9 +281,25 @@ function App() {
     );
   };
 
+  // Get unique key for current content to help React optimize transitions
+  const getContentKey = () => {
+    if (!currentContent) return 'prayer-default';
+    if (currentContent.type === 'prayer') return `prayer-${currentContentIndex}`;
+    if (currentContent.type === 'announcement' && currentContent.data) {
+      return `announcement-${(currentContent.data as any).id || currentContentIndex}`;
+    }
+    if (currentContent.type === 'media' && currentContent.data) {
+      return `media-${(currentContent.data as any).id || currentContentIndex}`;
+    }
+    if (currentContent.type === 'webview') return `webview-${currentContentIndex}`;
+    return `content-${currentContentIndex}`;
+  };
+
   return (
     <div className="relative">
-      {renderContent()}
+      <div key={getContentKey()} className="animate-fade-in">
+        {renderContent()}
+      </div>
 
       {/* Connection status indicator (only visible when not fullscreen or in debug mode) */}
       {(import.meta.env.VITE_DEBUG === 'true' || !isFullscreen) && (

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import type { MediaContent } from '../types';
 
 interface ImageSlideshowProps {
@@ -6,23 +6,37 @@ interface ImageSlideshowProps {
 }
 
 export const ImageSlideshow = ({ media }: ImageSlideshowProps) => {
-  const [imageLoaded, setImageLoaded] = useState(false);
   const [error, setError] = useState(false);
+  const [isReady, setIsReady] = useState(false);
+  const imgRef = useRef<HTMLImageElement>(null);
 
+  // Preload image when URL changes
   useEffect(() => {
-    // Reset states when media changes
-    setImageLoaded(false);
+    if (media.type !== 'image') {
+      setIsReady(true);
+      return;
+    }
+
     setError(false);
-  }, [media.url]);
 
-  const handleImageLoad = () => {
-    setImageLoaded(true);
-  };
+    // Create a new image to preload
+    const img = new Image();
+    img.src = media.url;
 
-  const handleImageError = () => {
-    setError(true);
-    console.error('Failed to load image:', media.url);
-  };
+    img.onload = () => {
+      setIsReady(true);
+    };
+
+    img.onerror = () => {
+      setError(true);
+      console.error('Failed to load image:', media.url);
+    };
+
+    // If image is already cached, it loads immediately
+    if (img.complete) {
+      setIsReady(true);
+    }
+  }, [media.url, media.type]);
 
   if (error) {
     return (
@@ -35,24 +49,15 @@ export const ImageSlideshow = ({ media }: ImageSlideshowProps) => {
   }
 
   return (
-    <div className="min-h-screen bg-black flex items-center justify-center animate-fade-in">
-      {/* Loading indicator */}
-      {!imageLoaded && (
-        <div className="absolute inset-0 flex items-center justify-center bg-gray-900">
-          <div className="animate-spin rounded-full h-32 w-32 border-t-4 border-b-4 border-islamic-gold"></div>
-        </div>
-      )}
-
-      {/* Image */}
+    <div className="min-h-screen bg-black flex items-center justify-center">
+      {/* Image - shows immediately without loading spinner */}
       {media.type === 'image' && (
         <img
+          ref={imgRef}
           src={media.url}
           alt={media.title || 'Media content'}
-          className={`max-w-full max-h-screen object-contain transition-opacity duration-500 ${
-            imageLoaded ? 'opacity-100' : 'opacity-0'
-          }`}
-          onLoad={handleImageLoad}
-          onError={handleImageError}
+          className="max-w-full max-h-screen object-contain animate-fade-in"
+          onError={() => setError(true)}
         />
       )}
 
@@ -60,17 +65,16 @@ export const ImageSlideshow = ({ media }: ImageSlideshowProps) => {
       {media.type === 'video' && (
         <video
           src={media.url}
-          className="max-w-full max-h-screen object-contain"
+          className="max-w-full max-h-screen object-contain animate-fade-in"
           autoPlay
           muted
           loop
-          onLoadedData={handleImageLoad}
-          onError={handleImageError}
+          onError={() => setError(true)}
         />
       )}
 
       {/* Title overlay if provided */}
-      {media.title && imageLoaded && (
+      {media.title && isReady && (
         <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-12">
           <h3 className="text-4xl font-bold text-white text-center">
             {media.title}
