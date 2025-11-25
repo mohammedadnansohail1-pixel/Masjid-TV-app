@@ -13,7 +13,8 @@ class WebSocketService {
   private masjidId: string | null = null;
 
   connect(deviceId: string, masjidId?: string) {
-    const wsUrl = import.meta.env.VITE_WS_URL || import.meta.env.VITE_API_URL || 'http://localhost:3000';
+    const isProd = import.meta.env.PROD;
+    const wsUrl = import.meta.env.VITE_WS_URL || import.meta.env.VITE_API_URL || (isProd ? 'https://masjid-tv-app.onrender.com' : 'http://localhost:3000');
     const newMasjidId = masjidId || null;
 
     // If already connected, check if we need to re-register with a new masjidId

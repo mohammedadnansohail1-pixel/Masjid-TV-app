@@ -11,7 +11,8 @@ class APIService {
   private deviceToken: string | null = null;
 
   constructor() {
-    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+    const isProd = import.meta.env.PROD;
+    const apiUrl = import.meta.env.VITE_API_URL || (isProd ? 'https://masjid-tv-app.onrender.com/api' : 'http://localhost:3000/api');
 
     this.api = axios.create({
       baseURL: apiUrl,
