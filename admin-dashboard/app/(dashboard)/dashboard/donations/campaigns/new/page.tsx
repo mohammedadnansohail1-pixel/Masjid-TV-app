@@ -102,11 +102,12 @@ export default function NewCampaignPage() {
                     <SelectValue placeholder="Select a masjid" />
                   </SelectTrigger>
                   <SelectContent>
-                    {masjids?.map((masjid) => (
-                      <SelectItem key={masjid.id} value={masjid.id.toString()}>
-                        {masjid.name}
-                      </SelectItem>
-                    ))}
+                    {Array.isArray(masjids) &&
+                      masjids.map((masjid) => (
+                        <SelectItem key={masjid.id} value={masjid.id.toString()}>
+                          {masjid.name}
+                        </SelectItem>
+                      ))}
                   </SelectContent>
                 </Select>
                 {errors.masjidId && (
